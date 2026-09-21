@@ -23,7 +23,7 @@ header{position:fixed;top:0;left:0;right:0;height:var(--header);background:var(-
 .iconbtn:hover{background:var(--bg3)}
 .iconbtn svg{width:24px;height:24px;fill:currentColor}
 .logo{display:flex;align-items:center;gap:6px;font-family:var(--hand);font-size:22px;line-height:1;padding-top:4px}
-.logo svg{width:36px;height:36px;margin-top:-6px}
+.logo svg{width:34px;height:34px;margin-top:-5px}
 .logo em{font-style:normal;color:var(--red)}
 .hcenter{display:flex;align-items:center;flex:1;max-width:640px;margin:0 40px}
 .search{display:flex;flex:1;height:40px}
@@ -35,7 +35,8 @@ header{position:fixed;top:0;left:0;right:0;height:var(--header);background:var(-
 .hright{display:flex;align-items:center;gap:8px}
 .addbtn{height:36px;background:var(--bg3)}
 .addbtn svg{width:22px;height:22px;fill:currentColor}
-.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;flex:none;font-size:14px;text-transform:uppercase}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;color:#fff;flex:none;font-size:14px;text-transform:uppercase;position:relative;overflow:hidden}
+.avatar img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 
 /* ---------- sidebar ---------- */
 nav{position:fixed;top:var(--header);left:0;bottom:0;width:var(--sidebar);background:var(--bg);overflow-y:auto;padding:12px;z-index:40}
@@ -197,3 +198,8 @@ h1.pagetitle{font-family:var(--hand);font-size:26px;font-weight:400;padding:24px
 .searching{display:flex;align-items:center;gap:10px;color:var(--text2);padding:24px 0}
 .searching svg{width:22px;height:22px;fill:var(--yellow);animation:spin 1.6s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
+.loadmore{display:flex;justify-content:center;padding:32px 0 8px}
+.loadmore .pill{height:40px;padding:0 24px}
+.wmore{position:relative}
+.wmore .menu{top:42px;right:0;width:240px}
+.pill svg{width:22px;height:22px;fill:currentColor}

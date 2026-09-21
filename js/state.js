@@ -39,7 +39,7 @@ function toggleSub(ch){
 }
 function notInterested(id){
   if(!state.notInterested.includes(id)) state.notInterested.push(id); save();
-  toast("Okay, Snoopy will show you fewer videos like this"); render();
+  toast("Okay, Snoopy will show you fewer videos like this");
 }
 function clearHistory(){ state.history=[]; save(); toast("Watch history cleared"); render(); }
 function resetAll(){
@@ -57,6 +57,7 @@ async function searchYouTubeLive(q){
   if(!r.ok||data.error) throw new Error(data.error||"HTTP "+r.status);
   return data.videos.map(v=>{
     if(byId[v.id]) return byId[v.id];
+    if(v.avatar&&!CHANNEL_AVATARS[v.ch]) CHANNEL_AVATARS[v.ch]=v.avatar;
     const full={...v,cat:"YouTube",tags:guessTags(v.title,"YouTube"),fromSearch:true};
     VIDEOS.push(full); byId[v.id]=full; return full;
   });

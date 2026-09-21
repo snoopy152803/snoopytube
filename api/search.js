@@ -46,6 +46,7 @@ function toVideo(r){
     dur: text(r.lengthText) || (r.badges?.some(b => /LIVE/i.test(text(b.metadataBadgeRenderer?.label))) ? "LIVE" : ""),
     views: parseViews(text(r.viewCountText)),
     age: text(r.publishedTimeText),
+    avatar: r.channelThumbnailSupportedRenderers?.channelThumbnailWithLinkRenderer?.thumbnail?.thumbnails?.[0]?.url || "",
   };
 }
 function parseViews(s){

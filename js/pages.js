@@ -39,6 +39,23 @@ function renderNav(){
 const catEmoji=c=>({"Minecraft PvP":"⚔️",Chess:"♟️",YouTube:"▶️",Education:"🎓",Science:"🔬",Coding:"💻",Gaming:"🎮",Entertainment:"🎪",Movies:"🎬",Comedy:"😂",Cooking:"🍳",Fitness:"💪",Nature:"🌿",Space:"🚀"}[c]||"📺");
 
 /* ---------- PAGES ---------- */
+/* ---------- LOAD MORE ----------
+   Pages show PAGE_SIZE cards, then a "Load more" button. The rest of the list
+   waits in PENDING; app.js appends the next batch into the grid when clicked
+   (no re-render, so the order — and any playing video — is left alone). */
+const PAGE_SIZE=20; let PENDING=[];
+function loadMore(rest){
+  PENDING=rest;
+  return rest.length?`<div class="loadmore"><button class="pill" id="loadMore">${ICONS.plus}Load more (${rest.length} more)</button></div>`:"";
+}
+function appendMore(){
+  const grid=document.querySelector(".grid"), btn=document.getElementById("loadMore"); if(!grid||!btn) return;
+  const batch=PENDING.slice(0,PAGE_SIZE); PENDING=PENDING.slice(PAGE_SIZE);
+  const again=grid.querySelector(".shelf.again");           // keep "Watch again" at the bottom
+  if(again) again.insertAdjacentHTML("beforebegin",batch.map(card).join("")); else grid.insertAdjacentHTML("beforeend",batch.map(card).join(""));
+  if(PENDING.length) btn.innerHTML=`${ICONS.plus}Load more (${PENDING.length} more)`; else btn.parentElement.remove();
+}
+
 function pageHome(cat){
   const p=buildProfile();
   const recs=recommend({cat});
@@ -54,17 +71,17 @@ function pageHome(cat){
     const sim=similar(last,4).filter(r=>!p.watched.has(r.v.id));
     if(sim.length) html+=`<div class="shelf"><h2><span class="ic">${ICONS.spark}</span>Because you watched <em style="font-style:normal;color:var(--text2)">&nbsp;${esc(last.title.length>50?last.title.slice(0,50)+"…":last.title)}</em></h2><div class="row">${sim.map(card).join("")}</div></div>`;
   }
-  html+=rest.map(card).join("");
+  html+=rest.slice(0,PAGE_SIZE-8).map(card).join("");
   if(state.history.length && cat==="All"){
     const again=state.history.slice(0,4).map(h=>byId[h.id]).filter(Boolean);
-    html+=`<div class="shelf"><h2><span class="ic">${ICONS.history}</span>Watch again<small><a href="#/history">View all</a></small></h2><div class="row">${again.map(v=>card({v})).join("")}</div></div>`;
+    html+=`<div class="shelf again"><h2><span class="ic">${ICONS.history}</span>Watch again<small><a href="#/history">View all</a></small></h2><div class="row">${again.map(v=>card({v})).join("")}</div></div>`;
   }
-  html+=`</div>`;
+  html+=`</div>`+loadMore(recs.slice(PAGE_SIZE));
   return `<div class="page">${html}</div>`;
 }
 function pageTrending(cat){
   const list=VIDEOS.filter(v=>cat==="All"||v.cat===cat).sort((a,b)=>b.views-a.views);
-  return `<div class="page">${chips(cat,"#/trending")}<h1 class="pagetitle">🔥 Trending in the neighbourhood</h1><div class="grid">${list.map(v=>card({v})).join("")}</div></div>`;
+  return `<div class="page">${chips(cat,"#/trending")}<h1 class="pagetitle">🔥 Trending in the neighbourhood</h1><div class="grid">${list.slice(0,PAGE_SIZE).map(v=>card({v})).join("")}</div>${loadMore(list.slice(PAGE_SIZE).map(v=>({v})))}</div>`;
 }
 function pageSearch(q){
   const p=buildProfile(); const ql=q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -126,32 +143,46 @@ function pageChannel(ch){
 }
 function pageWatch(id){
   const v=byId[id]; if(!v) return `<div class="page"><div class="empty"><h2>Video not found</h2></div></div>`;
-  if(!state.history[0]||state.history[0].id!==id) recordWatch(id);   // re-renders of the same page (like/subscribe) don't double count
-  const liked=state.liked.includes(id), disliked=state.disliked.includes(id), subbed=state.subs.includes(v.ch);
-  const next=similar(v,20);
+  if(!state.history[0]||state.history[0].id!==id) recordWatch(id);
   return `<div class="watch"><div class="wmain">
     <div class="player"><iframe src="https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0" title="${esc(v.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
     <h1 class="wtitle">${esc(v.title)}</h1>
-    <div class="wrow">
-      <div class="wch">${avatar(v.ch)}<div><a class="name" href="#/channel/${encodeURIComponent(v.ch)}">${esc(v.ch)}</a><div class="subs">${fmtViews(Math.round(v.views/40))} subscribers</div></div>
-        <button class="pill ${subbed?"subbed":"primary"}" data-sub="${esc(v.ch)}" style="margin-left:12px">${subbed?"Subscribed ✓":"Subscribe"}</button></div>
-      <div class="wacts">
-        <div class="likegroup">
-          <button class="${liked?"on":""}" data-like="${id}"><svg viewBox="0 0 24 24"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7 11H3v10h4h1h9.43c1.06 0 1.98-.67 2.19-1.61l1.34-6C21.23 12.15 20.18 11 18.77 11zM7 20H4v-8h3V20zM19.98 13.17l-1.34 6C18.54 19.65 18.03 20 17.43 20H8v-8.61l5.6-6.06C13.79 5.12 14.08 5 14.38 5c.26 0 .5.11.63.3.07.1.15.26.09.47l-1.52 4.94L13.18 12h1.35h4.23c.41 0 .8.17 1.03.46.12.15.25.4.19.71z"/></svg>${fmtViews(Math.round(v.views/60)+(liked?1:0))}</button>
-          <button class="${disliked?"on":""}" data-dislike="${id}"><svg viewBox="0 0 24 24" style="transform:rotate(180deg)"><path d="M18.77 11h-4.23l1.52-4.94C16.38 5.03 15.54 4 14.38 4c-.58 0-1.14.24-1.52.65L7 11H3v10h4h1h9.43c1.06 0 1.98-.67 2.19-1.61l1.34-6C21.23 12.15 20.18 11 18.77 11zM7 20H4v-8h3V20zM19.98 13.17l-1.34 6C18.54 19.65 18.03 20 17.43 20H8v-8.61l5.6-6.06C13.79 5.12 14.08 5 14.38 5c.26 0 .5.11.63.3.07.1.15.26.09.47l-1.52 4.94L13.18 12h1.35h4.23c.41 0 .8.17 1.03.46.12.15.25.4.19.71z"/></svg></button>
-        </div>
-        <a class="pill yt" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener"><svg viewBox="0 0 24 24"><path d="M10 9.35 15 12l-5 2.65zM21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8z"/></svg>Watch on YouTube</a>
-        <button class="pill" data-share="${v.id}"><svg viewBox="0 0 24 24"><path d="M15 5.63 20.66 12 15 18.37V14h-1c-3.96 0-7.14 1-9.75 3.09 1.84-4.07 5.11-6.4 9.89-7.1l.86-.13V5.63M14 3v6C6.22 10.13 3.11 15.33 2 21c2.78-3.88 6.44-5.66 12-5.66V21l8-9-8-9z"/></svg>Share</button>
-      </div>
-    </div>
+    <div class="wrow" id="wrow">${watchRow(v)}</div>
     <div class="desc" id="descBox">
-      <div class="stats">${fmtViews(v.views)} views • ${esc(v.age)}</div>
+      <div class="stats">${v.views?fmtViews(v.views)+" views • ":""}${esc(v.age)}</div>
       <div class="tags">${v.tags.map(t=>`<a href="#/search/${encodeURIComponent(t)}">#${esc(t)}</a>`).join("")}</div>
-      <div class="txt">${esc(v.title)} — from ${esc(v.ch)}.\n\nThis video is embedded from YouTube. If it says "Video unavailable" the uploader has disabled embedding — use the Watch on YouTube button above.\n\nCategory: ${v.cat}</div>
+      <div class="txt">${esc(v.title)} — from ${esc(v.ch)}.
+
+This video is embedded from YouTube. If it says "Video unavailable" the uploader has disabled embedding — use the Watch on YouTube button above.
+
+Category: ${v.cat}</div>
     </div>
   </div>
-  <div class="wside"><h3>Up next</h3>${next.map(sideCard).join("")}</div></div>`;
+  <div class="wside" id="wside">${upNext(v)}</div></div>`;
 }
+// The channel + like/dislike/subscribe/menu row. Kept separate so refreshWatch()
+// can redraw just this bit — re-rendering the whole page would restart the video.
+function watchRow(v){
+  const id=v.id, liked=state.liked.includes(id), disliked=state.disliked.includes(id), subbed=state.subs.includes(v.ch);
+  return `<div class="wch">${avatar(v.ch)}<div><a class="name" href="#/channel/${encodeURIComponent(v.ch)}">${esc(v.ch)}</a><div class="subs">${fmtViews(Math.round((v.views||1e5)/40))} subscribers</div></div>
+      <button class="pill ${subbed?"subbed":"primary"}" data-sub="${esc(v.ch)}" style="margin-left:12px">${subbed?"Subscribed ✓":"Subscribe"}</button></div>
+    <div class="wacts">
+      <div class="likegroup">
+        <button class="${liked?"on":""}" data-like="${id}">${ICONS.liked}${fmtViews(Math.round((v.views||1e5)/60)+(liked?1:0))}</button>
+        <button class="${disliked?"on":""}" data-dislike="${id}"><span style="display:inline-flex;transform:rotate(180deg)">${ICONS.liked}</span></button>
+      </div>
+      <a class="pill yt" href="https://www.youtube.com/watch?v=${v.id}" target="_blank" rel="noopener">${ICONS.yt}Watch on YouTube</a>
+      <div class="wmore"><button class="pill" data-menu="${id}">${ICONS.more}More</button>
+        <div class="menu" id="menu-${id}">${menuItems(v)}</div></div>
+    </div>`;
+}
+function upNext(v){ return `<h3>Up next</h3>${similar(v,20).map(sideCard).join("")}`; }
+function refreshWatch(id){
+  const v=byId[id], row=document.getElementById("wrow"); if(!v||!row) return;
+  row.innerHTML=watchRow(v); renderNav();
+}
+function refreshUpNext(id){ const v=byId[id], side=document.getElementById("wside"); if(v&&side) side.innerHTML=upNext(v); }
+const onWatchPage=()=>location.hash.startsWith("#/watch/");
 const timeAgo=t=>{const d=Date.now()-t,m=Math.floor(d/6e4),h=Math.floor(m/60),dd=Math.floor(h/24);return dd>0?`${dd} day${dd>1?"s":""} ago`:h>0?`${h} hour${h>1?"s":""} ago`:m>0?`${m} min ago`:"just now"};
 
 /* ---------- ADD VIDEO DIALOG ---------- */

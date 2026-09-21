@@ -41,6 +41,26 @@ async function submitAddDialog(){
   }catch(e){ err.textContent=e.message; go.disabled=false; go.textContent="Add to SnoopyTube"; }
 }
 
+/* ---------- SHARE & DOWNLOAD ---------- */
+function shareVideo(id){
+  const url="https://www.youtube.com/watch?v="+id;
+  if(navigator.share) navigator.share({title:byId[id]?.title,url}).catch(()=>{});
+  else navigator.clipboard?.writeText(url).then(()=>toast("YouTube link copied")).catch(()=>toast(url));
+}
+async function downloadVideo(id,fmt){
+  // api/download.js runs yt-dlp (+ffmpeg for MP3) on the server. That only exists
+  // when SnoopyTube runs locally with `node dev.js` — Vercel can't run yt-dlp.
+  const name=(byId[id]?.title||id).replace(/[\/:*?"<>|]+/g,"").slice(0,80);
+  const url=`/api/download?id=${id}&fmt=${fmt}&name=${encodeURIComponent(name)}`;
+  toast("Checking Snoopy's download tools…");
+  try{
+    const r=await fetch(url+"&check=1"); const j=await r.json();
+    if(!r.ok) return toast(j.error||"Downloads aren't available here");
+    toast(`Snoopy is fetching the ${fmt.toUpperCase()} — this can take a minute…`);
+    window.location.href=url;                 // server replies with a file attachment
+  }catch(e){ toast("Downloads only work when running SnoopyTube locally (node dev.js)"); }
+}
+
 /* ---------- EVENTS ---------- */
 document.getElementById("menuBtn").onclick=()=>{state.mini=!state.mini;save();document.body.classList.toggle("mini",state.mini)};
 document.body.classList.toggle("mini",state.mini);
@@ -51,15 +71,25 @@ document.addEventListener("click",e=>{
   document.querySelectorAll(".more.open").forEach(m=>m.classList.remove("open"));
   if(menuBtn){ e.preventDefault(); e.stopPropagation(); const m=document.getElementById("menu-"+menuBtn.dataset.menu); m.classList.toggle("open"); menuBtn.classList.toggle("open",m.classList.contains("open")); return; }
   const act=e.target.closest("[data-act]");
-  if(act){ const id=act.dataset.id; if(act.dataset.act==="like"){toggleLike(id);render();} else if(act.dataset.act==="yt") window.open("https://www.youtube.com/watch?v="+id,"_blank","noopener"); else if(act.dataset.act==="ni") notInterested(id); return; }
+  if(act){
+    const id=act.dataset.id, a=act.dataset.act;
+    if(a==="like"){ toggleLike(id); onWatchPage()?refreshWatch(id):render(); }
+    else if(a==="share") shareVideo(id);
+    else if(a==="dl") downloadVideo(id,act.dataset.fmt);
+    else if(a==="yt") window.open("https://www.youtube.com/watch?v="+id,"_blank","noopener");
+    else if(a==="ni"){ notInterested(id); onWatchPage()?refreshUpNext(location.hash.split("/")[2]):render(); }
+    return;
+  }
   if(e.target.closest("[data-stop]")) return;              // channel link inside a card
   const c=e.target.closest(".card"); if(c){ location.hash="#/watch/"+c.dataset.id; return; }
-  const sub=e.target.closest("[data-sub]"); if(sub){ toggleSub(sub.dataset.sub); render(); return; }
-  const like=e.target.closest("[data-like]"); if(like){ toggleLike(like.dataset.like); render(); return; }
-  const dis=e.target.closest("[data-dislike]"); if(dis){ toggleDislike(dis.dataset.dislike); render(); return; }
-  const sh=e.target.closest("[data-share]"); if(sh){ navigator.clipboard?.writeText("https://www.youtube.com/watch?v="+sh.dataset.share).then(()=>toast("YouTube link copied")).catch(()=>toast("https://youtu.be/"+sh.dataset.share)); return; }
+  // On the watch page these only redraw the controls row, so the video keeps playing.
+  const cur=()=>location.hash.split("/")[2];
+  const sub=e.target.closest("[data-sub]"); if(sub){ toggleSub(sub.dataset.sub); onWatchPage()?refreshWatch(cur()):render(); return; }
+  const like=e.target.closest("[data-like]"); if(like){ toggleLike(like.dataset.like); onWatchPage()?refreshWatch(cur()):render(); return; }
+  const dis=e.target.closest("[data-dislike]"); if(dis){ toggleDislike(dis.dataset.dislike); onWatchPage()?refreshWatch(cur()):render(); return; }
   if(e.target.closest("[data-addvideo]")){ openAddDialog(); return; }
   if(e.target.closest("[data-closedialog]")||e.target.id==="dialog"){ closeDialog(); return; }
+  if(e.target.closest("#loadMore")){ appendMore(); return; }
   if(e.target.closest("#clearHist")){ clearHistory(); return; }
   if(e.target.closest("#resetBtn")){ e.preventDefault(); resetAll(); return; }
 });

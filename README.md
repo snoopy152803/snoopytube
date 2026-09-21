@@ -15,6 +15,9 @@ A YouTube-style site where Snoopy learns what you like and fetches videos for yo
   Hikaru, agadmator, Anna Cramling, Eric Rosen, Naroditsky, Botez…), plus science,
   coding, education, cooking, fitness, nature and space.
 - **+ Add video** pastes any YouTube link straight into the catalogue.
+- **Download** (in the ⋮ menu on any video) saves an MP4 or MP3 using yt-dlp + ffmpeg.
+  This only works when you run SnoopyTube locally with `node dev.js` and have
+  `yt-dlp` and `ffmpeg` installed — Vercel can't run them, so the live site says so.
 - Recommendations are computed in your browser from what you watch, like, dislike and
   subscribe to. Everything is stored in `localStorage`; nothing leaves your machine.
 
@@ -25,9 +28,10 @@ A YouTube-style site where Snoopy learns what you like and fetches videos for yo
 | `index.html` | Page skeleton: header, sidebar, main area, dialog |
 | `css/style.css` | YouTube's dark layout with a Peanuts palette |
 | `api/search.js` | Serverless function: search YouTube and return the video links |
+| `api/download.js` | Runs yt-dlp/ffmpeg and sends the file (local only) |
 | `dev.js` | Local server that serves the site *and* runs `api/search.js` |
 | `js/catalogue.js` | The `VIDEOS` list and `addVideos()` helper (loaded first) |
-| `js/data/*.js` | The built-in videos, one file per group |
+| `js/data/*.js` | The built-in videos, one file per group; `channels.js` has channel photos |
 | `js/state.js` | History / likes / subs / added videos in localStorage, and the actions |
 | `js/recommend.js` | The recommendation engine — the brain |
 | `js/components.js` | Card, thumbnail, chip and icon HTML builders |

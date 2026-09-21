@@ -20,7 +20,7 @@ addVideos("Space", [
  {id:"4czjS9h4Fpg",title:"Perseverance Rover's Descent and Touchdown on Mars (Official NASA Video)",ch:"NASA",tags:"space mars nasa science",views:2.0e7,age:"3 years ago",dur:"3:25"},
  {id:"Ki_Af_o9Q9s",title:"Challenges of Getting to Mars: Curiosity's Seven Minutes of Terror",ch:"NASA Jet Propulsion Laboratory",tags:"space mars nasa engineering",views:1.0e7,age:"12 years ago",dur:"5:07"},
  {id:"wbSwFU6tY1c",title:"Falcon Heavy Test Flight",ch:"SpaceX",tags:"space rocket spacex engineering",views:3.0e7,age:"6 years ago",dur:"36:58"},
- {id:"YH3c1QZzRK4",title:"Wanderers - a short film by Erik Wernquist",ch:"Erik Wernquist",tags:"space shortfilm future",views:1.0e7,age:"10 years ago",dur:"3:50"},
+ {id:"YH3c1QZzRK4",title:"Wanderers - a short film by Erik Wernquist",ch:"Erik Wernquist - Digital Artist",tags:"space shortfilm future",views:1.0e7,age:"10 years ago",dur:"3:50"},
  {id:"uD4izuDMUQA",title:"TIMELAPSE OF THE FUTURE: A Journey to the End of Time (4K)",ch:"melodysheep",tags:"space physics future documentary",views:1.0e8,age:"5 years ago",dur:"29:21"},
  {id:"0fKBhvDjuy0",title:"Powers of Ten™ (1977)",ch:"Eames Office",tags:"space science classic",views:1.0e7,age:"14 years ago",dur:"9:01"},
 ]);

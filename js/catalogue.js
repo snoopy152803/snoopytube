@@ -16,7 +16,10 @@ function addVideos(cat, list){
 // Anyone can add a video from a YouTube link (see state.js addCustomVideo).
 // Those are stored in the browser and merged in at startup.
 function mergeCustomVideos(custom){
-  custom.forEach(v => { if(!VIDEOS.some(x => x.id === v.id)) VIDEOS.push(v); });
+  custom.forEach(v => {
+    if(!VIDEOS.some(x => x.id === v.id)) VIDEOS.push(v);
+    if(v.avatar && !CHANNEL_AVATARS[v.ch]) CHANNEL_AVATARS[v.ch] = v.avatar;
+  });
 }
 
 // Fast lookup by id + list of categories for the chips row.
