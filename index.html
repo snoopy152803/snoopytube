@@ -3,8 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MyTube</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23f00' d='M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8z'/%3E%3Cpath fill='%23fff' d='M10 15l5.2-3L10 9z'/%3E%3C/svg%3E">
+<title>SnoopyTube</title>
+<meta name="description" content="A YouTube-style site where Snoopy learns what you like and fetches videos for you. Real YouTube videos, recommendations made in your browser.">
+<meta property="og:title" content="SnoopyTube">
+<meta property="og:description" content="Snoopy fetches YouTube videos based on what you watch.">
+<meta property="og:url" content="https://snoopytube.vercel.app/">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Gloria+Hallelujah&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg viewBox='0 0 48 48' aria-hidden='true'%3E%3Cellipse cx='13' cy='27' rx='7' ry='13' fill='%23111' transform='rotate(14 13 27)'/%3E%3Cpath d='M11 15C10 6 28 3 36 12c8 3 11 12 7 18-3 5-11 7-19 5-9 2-15-5-13-20z' fill='%23fff'/%3E%3Ccircle cx='43' cy='29' r='3.6' fill='%23111'/%3E%3Ccircle cx='30' cy='15' r='1.8' fill='%23111'/%3E%3Cpath d='M14 36c8 3 16 3 24-1' stroke='%23d9251c' stroke-width='3' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -12,7 +18,7 @@
 <header>
   <div class="hleft">
     <button class="iconbtn" id="menuBtn" title="Menu"><svg viewBox="0 0 24 24"><path d="M21 6H3V5h18v1zm0 5H3v1h18v-1zm0 6H3v1h18v-1z"/></svg></button>
-    <a class="logo" href="#/"><svg viewBox="0 0 24 24"><path fill="#f00" d="M21.6 7.2c-.2-.9-.9-1.6-1.8-1.8C18.2 5 12 5 12 5s-6.2 0-7.8.4c-.9.2-1.6.9-1.8 1.8C2 8.8 2 12 2 12s0 3.2.4 4.8c.2.9.9 1.6 1.8 1.8C5.8 19 12 19 12 19s6.2 0 7.8-.4c.9-.2 1.6-.9 1.8-1.8.4-1.6.4-4.8.4-4.8s0-3.2-.4-4.8z"/><path fill="#fff" d="M10 15l5.2-3L10 9z"/></svg>MyTube<sup>AU</sup></a>
+    <a class="logo" href="#/"><svg viewBox="0 0 48 48" aria-hidden="true"><ellipse cx="13" cy="27" rx="7" ry="13" fill="#111" transform="rotate(14 13 27)"/><path d="M11 15C10 6 28 3 36 12c8 3 11 12 7 18-3 5-11 7-19 5-9 2-15-5-13-20z" fill="#fff"/><circle cx="43" cy="29" r="3.6" fill="#111"/><circle cx="30" cy="15" r="1.8" fill="#111"/><path d="M14 36c8 3 16 3 24-1" stroke="#d9251c" stroke-width="3" fill="none" stroke-linecap="round"/></svg><span>Snoopy<em>Tube</em></span></a>
   </div>
   <div class="hcenter">
     <form class="search" id="searchForm">
@@ -22,15 +28,21 @@
   </div>
   <div class="hright">
     <button class="iconbtn" title="Notifications"><svg viewBox="0 0 24 24"><path d="M10 20h4c0 1.1-.9 2-2 2s-2-.9-2-2zm10-2.65V19H4v-1.65l2-1.88v-5.15C6 7.4 7.56 5.1 10 4.34v-.38c0-1.42 1.49-2.5 2.99-1.76.65.32 1.01 1.03 1.01 1.76v.39c2.44.75 4 3.06 4 5.98v5.15l2 1.87zm-1 .42-2-1.88v-5.47c0-2.47-1.19-4.36-3.13-5.1-1.26-.53-2.64-.5-3.84.03C8.15 6.11 7 7.99 7 10.42v5.47l-2 1.88V18h14v-.23z"/></svg></button>
-    <div class="avatar" id="meAvatar" style="background:#7b3fe4" title="You">Y</div>
+    <button class="pill addbtn" data-addvideo title="Add any YouTube video"><svg viewBox="0 0 24 24"><path d="M20 12h-8v8h-1v-8H3v-1h8V3h1v8h8v1z"/></svg><span>Add video</span></button>
+    <div class="avatar" id="meAvatar" style="background:#f5c518;color:#111" title="You">S</div>
   </div>
 </header>
 
 <nav id="nav"></nav>
 <main id="main"></main>
 <div class="toast" id="toast"></div>
+<div class="dialogbg" id="dialog"></div>
 
-<script src="js/videos.js"></script>
+<script src="js/catalogue.js"></script>
+<script src="js/data/music.js"></script>
+<script src="js/data/learning.js"></script>
+<script src="js/data/entertainment.js"></script>
+<script src="js/data/life.js"></script>
 <script src="js/state.js"></script>
 <script src="js/recommend.js"></script>
 <script src="js/components.js"></script>

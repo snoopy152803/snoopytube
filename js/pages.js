@@ -17,22 +17,23 @@ function renderNav(){
     ${item("#/liked",ICONS.liked,"Liked videos")}
   </div>
   <div class="navsec hidemini">
-    <div class="navtitle">Your taste</div>
+    <div class="navtitle">Snoopy's notes on you</div>
     ${tags.length?`<div class="taste">${tags.map(([t,w])=>`<div class="tag"><span style="width:82px;overflow:hidden;text-overflow:ellipsis">${esc(t)}</span><div class="bar"><i style="width:${Math.round(w/maxW*100)}%"></i></div></div>`).join("")}</div>
-    <div class="navsub">Learned from ${state.history.length} watch${state.history.length===1?"":"es"}, ${state.liked.length} like${state.liked.length===1?"":"s"}</div>`
-    :`<div class="navsub">Nothing learned yet. Watch a few videos and MyTube will start to recommend things you'll like.</div>`}
+    <div class="navsub">Woodstock has taken notes on ${state.history.length} watch${state.history.length===1?"":"es"} and ${state.liked.length} like${state.liked.length===1?"":"s"}.</div>`
+    :`<div class="navsub">Nothing in the doghouse yet. Watch a few videos and Snoopy will start fetching things you'll like.</div>`}
   </div>
   <div class="navsec hidemini">
     <div class="navtitle">Subscriptions</div>
-    ${state.subs.length?state.subs.map(ch=>`<a class="navitem" href="#/channel/${encodeURIComponent(ch)}">${avatar(ch)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(ch)}</span></a>`).join(""):`<div class="navsub">Subscribe to channels from a video page and they'll show up here.</div>`}
+    ${state.subs.length?state.subs.map(ch=>`<a class="navitem" href="#/channel/${encodeURIComponent(ch)}">${avatar(ch)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(ch)}</span></a>`).join(""):`<div class="navsub">Subscribe to a channel from a video page and it'll show up here.</div>`}
   </div>
   <div class="navsec hidemini">
     <div class="navtitle">Explore</div>
     ${CATS.slice(1).map(c=>`<a class="navitem" href="#/?cat=${encodeURIComponent(c)}"><span style="width:24px;text-align:center">${catEmoji(c)}</span><span>${c}</span></a>`).join("")}
   </div>
   <div class="navsec hidemini">
-    <a class="navitem" href="#/reset" id="resetBtn">${ICONS.reset}<span>Reset MyTube</span></a>
-    <div class="navsub">MyTube is a demo that links to real YouTube videos. Your history stays in this browser.</div>
+    ${item("#/added",ICONS.plus,"Added by you")}
+    <a class="navitem" href="#/reset" id="resetBtn">${ICONS.reset}<span>Reset SnoopyTube</span></a>
+    <div class="navsub">SnoopyTube plays real YouTube videos through YouTube's own player. Your history never leaves this browser.</div>
   </div>`;
 }
 const catEmoji=c=>({Music:"🎵",Education:"🎓",Science:"🔬",Coding:"💻",Gaming:"🎮",Entertainment:"🎪",Movies:"🎬",Comedy:"😂",Cooking:"🍳",Fitness:"💪",Nature:"🌿",Space:"🚀"}[c]||"📺");
@@ -44,7 +45,7 @@ function pageHome(cat){
   const last=state.history[0]&&byId[state.history[0].id];
   let html=chips(cat,"#/");
   if(!state.history.length){
-    html+=`<div class="notice"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg><div><b>Welcome to MyTube.</b> Right now you're seeing what's popular. Watch, like or subscribe to anything and your home feed will start to reshape itself around your taste.</div></div>`;
+    html+=`<div class="notice"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg><div><b>Welcome to SnoopyTube!</b> Right now you're seeing what's popular. Watch, like or subscribe to anything and Snoopy will start fetching videos you'll love. Can't find something? Hit <b>+ Add video</b> and paste any YouTube link.</div></div>`;
   }
   if(!recs.length){ html+=`<div class="empty"><h2>Nothing left to recommend here</h2>You've watched everything in this category. Check History to watch again.</div>`; }
   const first=recs.slice(0,8), rest=recs.slice(8);
@@ -63,7 +64,7 @@ function pageHome(cat){
 }
 function pageTrending(cat){
   const list=VIDEOS.filter(v=>cat==="All"||v.cat===cat).sort((a,b)=>b.views-a.views);
-  return `<div class="page">${chips(cat,"#/trending")}<h1 class="pagetitle">🔥 Trending</h1><div class="grid">${list.map(v=>card({v})).join("")}</div></div>`;
+  return `<div class="page">${chips(cat,"#/trending")}<h1 class="pagetitle">🔥 Trending in the neighbourhood</h1><div class="grid">${list.map(v=>card({v})).join("")}</div></div>`;
 }
 function pageSearch(q){
   const p=buildProfile(); const ql=q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -73,12 +74,17 @@ function pageSearch(q){
     if(ql.length && m===0) return null;
     const sc=scoreVideo(v,p); return {v,s:m*2+sc.s*0.6,why:sc.why};
   }).filter(Boolean).sort((a,b)=>b.s-a.s);
-  return `<div class="page"><h1 class="pagetitle">Results for “${esc(q)}”</h1>${res.length?`<div class="list">${res.map(r=>listCard(r)).join("")}</div>`:`<div class="empty"><h2>No results found</h2>Try different keywords.</div>`}</div>`;
+  return `<div class="page"><h1 class="pagetitle">Results for “${esc(q)}”</h1>${res.length?`<div class="list">${res.map(r=>listCard(r)).join("")}</div>`:`<div class="empty"><h2>Snoopy couldn't sniff that out</h2>Try different keywords, or search all of YouTube below.</div>`}
+  <div class="ytfallback">
+    <div><b>Not here?</b> SnoopyTube only knows ${VIDEOS.length} videos so far.</div>
+    <a class="pill yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(q)}" target="_blank" rel="noopener">Search YouTube for “${esc(q)}”</a>
+    <button class="pill" data-addvideo>${ICONS.plus}Paste a link to add it here</button>
+  </div></div>`;
 }
 function pageHistory(){
   const list=state.history.map(h=>({v:byId[h.id],h})).filter(x=>x.v);
   return `<div class="page"><div class="pagehead"><h1 class="pagetitle">Watch history</h1>${list.length?`<button class="btn" id="clearHist">${ICONS.reset}Clear all watch history</button>`:""}</div>
-  ${list.length?`<div class="list">${list.map(({v,h})=>listCard({v},` • Watched ${timeAgo(h.t)}${h.n>1?` • ${h.n} times`:""}`)).join("")}</div>`:`<div class="empty"><h2>Keep track of what you watch</h2>Watch history isn't just a list — it's what powers your recommendations.</div>`}</div>`;
+  ${list.length?`<div class="list">${list.map(({v,h})=>listCard({v},` • Watched ${timeAgo(h.t)}${h.n>1?` • ${h.n} times`:""}`)).join("")}</div>`:`<div class="empty"><h2>Nothing in the doghouse yet</h2>Watch history isn't just a list — it's what Snoopy uses to pick your recommendations.</div>`}</div>`;
 }
 function pageLiked(){
   const list=state.liked.map(id=>byId[id]).filter(Boolean);
@@ -88,6 +94,11 @@ function pageSubs(){
   if(!state.subs.length) return `<div class="page"><h1 class="pagetitle">Subscriptions</h1><div class="empty"><h2>Don't miss new videos</h2>Subscribe to a channel from any video page to see its videos here.</div></div>`;
   const list=VIDEOS.filter(v=>state.subs.includes(v.ch));
   return `<div class="page"><h1 class="pagetitle">Latest from your subscriptions</h1><div class="grid">${list.map(v=>card({v})).join("")}</div></div>`;
+}
+function pageAdded(){
+  const list=state.custom.map(v=>byId[v.id]).filter(Boolean).reverse();
+  return `<div class="page"><div class="pagehead"><h1 class="pagetitle">Added by you</h1><button class="pill primary" data-addvideo>${ICONS.plus}Add video</button></div>
+  ${list.length?`<div class="grid">${list.map(v=>card({v})).join("")}</div>`:`<div class="empty"><h2>Bring any YouTube video into SnoopyTube</h2>Paste a YouTube link and it joins the catalogue — Snoopy will recommend it like any other video.</div>`}</div>`;
 }
 function pageChannel(ch){
   const list=VIDEOS.filter(v=>v.ch===ch); if(!list.length) return `<div class="page"><div class="empty"><h2>Channel not found</h2></div></div>`;
@@ -127,3 +138,15 @@ function pageWatch(id){
   <div class="wside"><h3>Up next</h3>${next.map(sideCard).join("")}</div></div>`;
 }
 const timeAgo=t=>{const d=Date.now()-t,m=Math.floor(d/6e4),h=Math.floor(m/60),dd=Math.floor(h/24);return dd>0?`${dd} day${dd>1?"s":""} ago`:h>0?`${h} hour${h>1?"s":""} ago`:m>0?`${m} min ago`:"just now"};
+
+/* ---------- ADD VIDEO DIALOG ---------- */
+function addDialogHtml(){
+  return `<div class="dialog">
+    <h2>${ICONS.plus} Add a YouTube video</h2>
+    <p>Paste any YouTube link. Snoopy fetches the title, channel and thumbnail from YouTube and adds it to the catalogue.</p>
+    <input id="addLink" type="text" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+    <label>Category <select id="addCat">${CATS.slice(1).map(c=>`<option>${c}</option>`).join("")}</select></label>
+    <div class="err" id="addErr"></div>
+    <div class="dlgbtns"><button class="pill" data-closedialog>Cancel</button><button class="pill primary" id="addGo">Add to SnoopyTube</button></div>
+  </div>`;
+}
