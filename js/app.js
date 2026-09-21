@@ -60,15 +60,12 @@ document.addEventListener("click",e=>{
   const sh=e.target.closest("[data-share]"); if(sh){ navigator.clipboard?.writeText("https://www.youtube.com/watch?v="+sh.dataset.share).then(()=>toast("YouTube link copied")).catch(()=>toast("https://youtu.be/"+sh.dataset.share)); return; }
   if(e.target.closest("[data-addvideo]")){ openAddDialog(); return; }
   if(e.target.closest("[data-closedialog]")||e.target.id==="dialog"){ closeDialog(); return; }
-  if(e.target.closest("#addGo")){ submitAddDialog(); return; }
   if(e.target.closest("#clearHist")){ clearHistory(); return; }
   if(e.target.closest("#resetBtn")){ e.preventDefault(); resetAll(); return; }
 });
 let toastT; function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2600); }
-document.addEventListener("keydown",e=>{
-  if(e.key==="Escape") closeDialog();
-  if(e.key==="Enter"&&e.target.id==="addLink") submitAddDialog();
-});
+document.addEventListener("submit",e=>{ if(e.target.id==="addForm"){ e.preventDefault(); submitAddDialog(); } });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDialog(); });
 
 /* ---------- START ---------- */
 mergeCustomVideos(state.custom);   // videos you added from YouTube links

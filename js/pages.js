@@ -36,7 +36,7 @@ function renderNav(){
     <div class="navsub">SnoopyTube plays real YouTube videos through YouTube's own player. Your history never leaves this browser.</div>
   </div>`;
 }
-const catEmoji=c=>({Music:"🎵",Education:"🎓",Science:"🔬",Coding:"💻",Gaming:"🎮",Entertainment:"🎪",Movies:"🎬",Comedy:"😂",Cooking:"🍳",Fitness:"💪",Nature:"🌿",Space:"🚀"}[c]||"📺");
+const catEmoji=c=>({"Minecraft PvP":"⚔️",Chess:"♟️",YouTube:"▶️",Education:"🎓",Science:"🔬",Coding:"💻",Gaming:"🎮",Entertainment:"🎪",Movies:"🎬",Comedy:"😂",Cooking:"🍳",Fitness:"💪",Nature:"🌿",Space:"🚀"}[c]||"📺");
 
 /* ---------- PAGES ---------- */
 function pageHome(cat){
@@ -45,7 +45,7 @@ function pageHome(cat){
   const last=state.history[0]&&byId[state.history[0].id];
   let html=chips(cat,"#/");
   if(!state.history.length){
-    html+=`<div class="notice"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg><div><b>Welcome to SnoopyTube!</b> Right now you're seeing what's popular. Watch, like or subscribe to anything and Snoopy will start fetching videos you'll love. Can't find something? Hit <b>+ Add video</b> and paste any YouTube link.</div></div>`;
+    html+=`<div class="notice"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg><div><b>Welcome to SnoopyTube!</b> Right now you're seeing what's popular. Watch, like or subscribe to anything and Snoopy will start fetching videos you'll love. Search for anything and Snoopy fetches results straight from YouTube.</div></div>`;
   }
   if(!recs.length){ html+=`<div class="empty"><h2>Nothing left to recommend here</h2>You've watched everything in this category. Check History to watch again.</div>`; }
   const first=recs.slice(0,8), rest=recs.slice(8);
@@ -68,18 +68,33 @@ function pageTrending(cat){
 }
 function pageSearch(q){
   const p=buildProfile(); const ql=q.toLowerCase().split(/\s+/).filter(Boolean);
-  const res=VIDEOS.map(v=>{
+  // 1. Instant results from videos SnoopyTube already knows (catalogue + ones you've saved)
+  const res=VIDEOS.filter(v=>!v.fromSearch).map(v=>{
     const hay=(v.title+" "+v.ch+" "+v.cat+" "+v.tags.join(" ")).toLowerCase();
     let m=0; ql.forEach(w=>{ if(v.title.toLowerCase().includes(w)) m+=3; else if(v.ch.toLowerCase().includes(w)) m+=2; else if(hay.includes(w)) m+=1; });
     if(ql.length && m===0) return null;
     const sc=scoreVideo(v,p); return {v,s:m*2+sc.s*0.6,why:sc.why};
   }).filter(Boolean).sort((a,b)=>b.s-a.s);
-  return `<div class="page"><h1 class="pagetitle">Results for “${esc(q)}”</h1>${res.length?`<div class="list">${res.map(r=>listCard(r)).join("")}</div>`:`<div class="empty"><h2>Snoopy couldn't sniff that out</h2>Try different keywords, or search all of YouTube below.</div>`}
-  <div class="ytfallback">
-    <div><b>Not here?</b> SnoopyTube only knows ${VIDEOS.length} videos so far.</div>
-    <a class="pill yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(q)}" target="_blank" rel="noopener">Search YouTube for “${esc(q)}”</a>
-    <button class="pill" data-addvideo>${ICONS.plus}Paste a link to add it here</button>
-  </div></div>`;
+  // 2. Live results from YouTube itself, filled in by fillYouTubeResults() once /api/search answers
+  setTimeout(()=>fillYouTubeResults(q),0);
+  return `<div class="page"><h1 class="pagetitle">Results for “${esc(q)}”</h1>
+  ${res.length?`<div class="list">${res.map(r=>listCard(r)).join("")}</div>`:""}
+  <h2 class="ytheading"><span class="ytlogo">▶</span> From YouTube</h2>
+  <div class="list" id="ytResults"><div class="searching">${ICONS.spark} Snoopy is sniffing around YouTube for “${esc(q)}”…</div></div></div>`;
+}
+async function fillYouTubeResults(q){
+  const box=document.getElementById("ytResults"); if(!box) return;
+  try{
+    const list=await searchYouTubeLive(q);
+    if(!document.getElementById("ytResults")) return;                  // user already navigated away
+    box.innerHTML=list.length?list.map(v=>listCard({v})).join(""):`<div class="empty">YouTube had nothing for that either.</div>`;
+  }catch(e){
+    box.innerHTML=`<div class="ytfallback">
+      <div><b>Couldn't reach YouTube search</b> (${esc(e.message)}). You can still open YouTube and paste a link.</div>
+      <a class="pill yt" href="https://www.youtube.com/results?search_query=${encodeURIComponent(q)}" target="_blank" rel="noopener">Search YouTube for “${esc(q)}”</a>
+      <button class="pill" data-addvideo>${ICONS.plus}Paste a link to add it</button>
+    </div>`;
+  }
 }
 function pageHistory(){
   const list=state.history.map(h=>({v:byId[h.id],h})).filter(x=>x.v);
@@ -144,9 +159,11 @@ function addDialogHtml(){
   return `<div class="dialog">
     <h2>${ICONS.plus} Add a YouTube video</h2>
     <p>Paste any YouTube link. Snoopy fetches the title, channel and thumbnail from YouTube and adds it to the catalogue.</p>
-    <input id="addLink" type="text" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
-    <label>Category <select id="addCat">${CATS.slice(1).map(c=>`<option>${c}</option>`).join("")}</select></label>
-    <div class="err" id="addErr"></div>
-    <div class="dlgbtns"><button class="pill" data-closedialog>Cancel</button><button class="pill primary" id="addGo">Add to SnoopyTube</button></div>
+    <form id="addForm">
+      <input id="addLink" type="text" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+      <label>Category <select id="addCat">${CATS.slice(1).map(c=>`<option>${c}</option>`).join("")}</select></label>
+      <div class="err" id="addErr"></div>
+      <div class="dlgbtns"><button type="button" class="pill" data-closedialog>Cancel</button><button type="submit" class="pill primary" id="addGo">Add to SnoopyTube</button></div>
+    </form>
   </div>`;
 }

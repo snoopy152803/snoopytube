@@ -38,12 +38,12 @@ function scoreVideo(v,p){
 }
 function recommend({exclude=[],cat="All",limit=Infinity,includeWatched=false}={}){
   const p=buildProfile(); const ex=new Set(exclude);
-  return VIDEOS.filter(v=>!ex.has(v.id) && (cat==="All"||v.cat===cat) && (includeWatched||!p.watched.has(v.id)) && !state.notInterested.includes(v.id))
+  return VIDEOS.filter(v=>!ex.has(v.id) && !(v.fromSearch&&!v.custom) && (cat==="All"||v.cat===cat) && (includeWatched||!p.watched.has(v.id)) && !state.notInterested.includes(v.id))
     .map(v=>({v,...scoreVideo(v,p)})).sort((a,b)=>b.s-a.s).slice(0,limit);
 }
 function similar(seed,limit=20){
   const p=buildProfile(); const st=new Set(seed.tags);
-  return VIDEOS.filter(v=>v.id!==seed.id && !state.notInterested.includes(v.id)).map(v=>{
+  return VIDEOS.filter(v=>v.id!==seed.id && !(v.fromSearch&&!v.custom) && !state.notInterested.includes(v.id)).map(v=>{
     const overlap=v.tags.filter(t=>st.has(t)).length;
     let s=overlap*1.6 + (v.ch===seed.ch?2.2:0) + (v.cat===seed.cat?0.7:0) + scoreVideo(v,p).s*0.45;
     if(p.watched.has(v.id)) s-=1.2;

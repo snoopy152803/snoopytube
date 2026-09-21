@@ -192,3 +192,8 @@ h1.pagetitle{font-family:var(--hand);font-size:26px;font-weight:400;padding:24px
 .ytfallback{margin-top:32px;background:var(--bg3);border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;max-width:1100px}
 .ytfallback>div{flex:1;min-width:200px}
 .ytfallback .pill svg{width:20px;height:20px}
+.ytheading{font-family:var(--hand);font-size:20px;font-weight:400;margin:32px 0 4px;display:flex;align-items:center;gap:10px}
+.ytlogo{background:#c00;color:#fff;font-size:12px;width:26px;height:18px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center}
+.searching{display:flex;align-items:center;gap:10px;color:var(--text2);padding:24px 0}
+.searching svg{width:22px;height:22px;fill:var(--yellow);animation:spin 1.6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}

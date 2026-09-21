@@ -2,7 +2,7 @@
 
 /* ---------- RENDER HELPERS ---------- */
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const meta=v=>v.custom?"Added by you":`${fmtViews(v.views)} views • ${esc(v.age)}`;
+const meta=v=>v.views?`${fmtViews(v.views)} views • ${esc(v.age)}`:esc(v.age||"Added by you");
 const fmtViews=n=>n>=1e9?(n/1e9).toFixed(1).replace(/\.0$/,"")+"B":n>=1e6?(n/1e6).toFixed(n<1e7?1:0).replace(/\.0$/,"")+"M":n>=1e3?Math.round(n/1e3)+"K":n;
 const hue=s=>{let h=0;for(const c of s)h=(h*31+c.charCodeAt(0))%360;return h};
 const avatar=(ch,cls="")=>`<div class="avatar ${cls}" style="background:hsl(${hue(ch)},55%,42%)" title="${esc(ch)}">${esc(ch.replace(/^the /i,"")[0])}</div>`;

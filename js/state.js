@@ -14,11 +14,13 @@ const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
 
 /* ---------- WATCHING / LIKING / SUBSCRIBING ---------- */
 function recordWatch(id){
+  keepVideo(id);
   const i=state.history.findIndex(h=>h.id===id);
   let n=1; if(i>-1){ n=(state.history[i].n||1)+1; state.history.splice(i,1); }
   state.history.unshift({id,t:Date.now(),n}); state.history=state.history.slice(0,200); save();
 }
 function toggleLike(id){
+  keepVideo(id);
   const on=state.liked.includes(id);
   state.liked=state.liked.filter(x=>x!==id); state.disliked=state.disliked.filter(x=>x!==id);
   if(!on) state.liked.unshift(id); save();
@@ -43,6 +45,25 @@ function clearHistory(){ state.history=[]; save(); toast("Watch history cleared"
 function resetAll(){
   if(!confirm("Reset all watch history, likes, subscriptions and added videos?")) return;
   state={...EMPTY,mini:state.mini}; save(); toast("SnoopyTube has been reset"); render();
+}
+
+/* ---------- SEARCHING YOUTUBE ----------
+   /api/search (see api/search.js) opens YouTube's results page on the server and
+   returns the video links, like copying them by hand. Results join the catalogue
+   for this session; keepVideo() saves the ones you watch or like permanently. */
+async function searchYouTubeLive(q){
+  const r=await fetch("/api/search?q="+encodeURIComponent(q));
+  const data=await r.json().catch(()=>({error:"search API not running (it needs Vercel or `node dev.js`)"}));
+  if(!r.ok||data.error) throw new Error(data.error||"HTTP "+r.status);
+  return data.videos.map(v=>{
+    if(byId[v.id]) return byId[v.id];
+    const full={...v,cat:"YouTube",tags:guessTags(v.title,"YouTube"),fromSearch:true};
+    VIDEOS.push(full); byId[v.id]=full; return full;
+  });
+}
+function keepVideo(id){
+  const v=byId[id];
+  if(v&&v.fromSearch&&!state.custom.some(x=>x.id===id)){ v.custom=true; state.custom.push(v); save(); }
 }
 
 /* ---------- ADDING ANY YOUTUBE VIDEO ----------
