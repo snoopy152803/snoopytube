@@ -86,11 +86,13 @@ function pageTrending(cat){
 function pageSearch(q){
   const p=buildProfile(); const ql=q.toLowerCase().split(/\s+/).filter(Boolean);
   // 1. Instant results from videos SnoopyTube already knows (catalogue + ones you've saved)
-  const res=VIDEOS.filter(v=>!v.fromSearch).map(v=>{
-    const hay=(v.title+" "+v.ch+" "+v.cat+" "+v.tags.join(" ")).toLowerCase();
-    let m=0; ql.forEach(w=>{ if(v.title.toLowerCase().includes(w)) m+=3; else if(v.ch.toLowerCase().includes(w)) m+=2; else if(hay.includes(w)) m+=1; });
-    if(ql.length && m===0) return null;
-    const sc=scoreVideo(v,p); return {v,s:m*2+sc.s*0.6,why:sc.why};
+  const words=str=>str.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(Boolean);
+  const hit=(list,w)=>list.some(x=>x===w||(w.length>=4&&x.startsWith(w)));   // whole words (or a 4+ letter prefix), not substrings
+  const res=VIDEOS.filter(v=>!(v.fromSearch&&!v.custom)).map(v=>{
+    const t=words(v.title), c=words(v.ch), g=[...v.tags,v.cat.toLowerCase()];
+    let m=0; ql.forEach(w=>{ if(hit(t,w)) m+=3; else if(hit(c,w)) m+=2; else if(hit(g,w)) m+=1; });
+    if(ql.length && m<ql.length) return null;                 // every search word must match somewhere
+    const sc=scoreVideo(v,p); return {v,s:m*2+sc.s*0.1,why:sc.why};
   }).filter(Boolean).sort((a,b)=>b.s-a.s);
   // 2. Live results from YouTube itself, filled in by fillYouTubeResults() once /api/search answers
   setTimeout(()=>fillYouTubeResults(q),0);
@@ -176,7 +178,24 @@ function watchRow(v){
         <div class="menu" id="menu-${id}">${menuItems(v)}</div></div>
     </div>`;
 }
-function upNext(v){ return `<h3>Up next</h3>${similar(v,20).map(sideCard).join("")}`; }
+function upNext(v){
+  setTimeout(()=>fillUpNext(v),0);
+  return `<h3>Up next</h3><div id="upnextLocal">${similar(v,8).map(sideCard).join("")}</div>
+    <div id="upnextYt"><div class="searching small">${ICONS.spark} Finding related videos on YouTube…</div></div>`;
+}
+// Ask YouTube for videos like this one: the channel name plus a couple of title words.
+// Works for any video, including ones that came from search and have no catalogue neighbours.
+async function fillUpNext(v){
+  const box=document.getElementById("upnextYt"); if(!box) return;
+  const words=v.title.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3&&!STOPWORDS.has(w)).slice(0,3);
+  try{
+    const list=await searchYouTubeLive(v.ch+" "+words.join(" "));
+    if(!document.getElementById("upnextYt")||location.hash!=="#/watch/"+v.id) return;
+    const shown=new Set([v.id,...[...document.querySelectorAll("#upnextLocal .card")].map(c=>c.dataset.id)]);
+    const fresh=list.filter(x=>!shown.has(x.id)&&!state.notInterested.includes(x.id)).slice(0,12);
+    box.innerHTML=fresh.map(x=>sideCard({v:x,why:x.ch===v.ch?{t:"More from "+x.ch,k:"ch"}:{t:"Related on YouTube",k:"tag"}})).join("");
+  }catch(e){ box.innerHTML=""; }
+}
 function refreshWatch(id){
   const v=byId[id], row=document.getElementById("wrow"); if(!v||!row) return;
   row.innerHTML=watchRow(v); renderNav();

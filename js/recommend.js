@@ -4,8 +4,9 @@
    buildProfile()  : turns your history / likes / dislikes / subscriptions into
                      tag + channel weights (recent watches count more).
    scoreVideo()    : scores one video against that profile and explains why.
-   recommend()     : sorted, filtered feed for the home page.
-   similar()       : "Up next" — similarity to the current video blended with your taste.
+   recommend()     : sorted, filtered feed for the home page, with a variety pass
+                     so one channel or topic can't take over.
+   similar()       : "Up next" — videos genuinely related to the one playing.
    ------------------------------------------- */
 function buildProfile(){
   const tags={}, chans={};
@@ -21,14 +22,19 @@ function buildProfile(){
   const strength=Object.values(tags).reduce((a,b)=>a+Math.max(0,b),0);
   return {tags,chans,watched,strength};
 }
+
+// Dampen weights: watching 30 chess videos shouldn't make chess 30× stronger than
+// something you watched twice. log(1+w) keeps big interests big but not overwhelming.
+const damp=w=>Math.sign(w)*Math.log1p(Math.abs(w));
+
 function scoreVideo(v,p){
   let s=0, best=null, bestW=0;
-  v.tags.forEach(t=>{ const w=p.tags[t]||0; s+=w; if(w>bestW){bestW=w;best=t;} });
-  s+=(p.tags["cat:"+v.cat]||0)*0.6;
+  v.tags.forEach(t=>{ const w=p.tags[t]||0; s+=damp(w); if(w>bestW){bestW=w;best=t;} });
+  s+=damp(p.tags["cat:"+v.cat]||0)*0.6;
   s/=Math.sqrt(v.tags.length+1);
-  const cw=p.chans[v.ch]||0; s+=cw*1.2;
+  const cw=p.chans[v.ch]||0; s+=damp(cw)*0.9;
   s+=Math.log10(v.views+1)*0.06;          // small popularity prior
-  s+=Math.random()*0.35;                   // a little exploration so the feed isn't static
+  s+=Math.random()*0.5;                    // exploration, so new things get a look in
   let why=null;
   if(state.subs.includes(v.ch)) why={t:"From "+v.ch+" — subscribed",k:"sub"};
   else if(cw>=1.2) why={t:"More from "+v.ch,k:"ch"};
@@ -36,23 +42,45 @@ function scoreVideo(v,p){
   else if((p.tags["cat:"+v.cat]||0)>=0.9) why={t:"Because you like "+v.cat,k:"tag"};
   return {s,why};
 }
+
+// Variety pass: walk the ranked list in blocks of 20 and cap how many videos from
+// one channel (3) or one category (8) can appear in each block. Overflow just slides
+// to a later block, so nothing is lost — the feed just isn't wall-to-wall chess.
+function diversify(list,block=20,perChannel=3,perCategory=8){
+  const out=[]; let pool=list.slice();
+  while(pool.length){
+    const chunk=[], ch={}, cat={}, later=[];
+    for(const r of pool){
+      if(chunk.length>=block){ later.push(r); continue; }
+      if((ch[r.v.ch]||0)>=perChannel || (cat[r.v.cat]||0)>=perCategory){ later.push(r); continue; }
+      chunk.push(r); ch[r.v.ch]=(ch[r.v.ch]||0)+1; cat[r.v.cat]=(cat[r.v.cat]||0)+1;
+    }
+    if(!chunk.length){ out.push(...later); break; }     // only capped items left — just append them
+    out.push(...chunk); pool=later;
+  }
+  return out;
+}
+
 function recommend({exclude=[],cat="All",limit=Infinity,includeWatched=false}={}){
   const p=buildProfile(); const ex=new Set(exclude);
-  return VIDEOS.filter(v=>!ex.has(v.id) && !(v.fromSearch&&!v.custom) && (cat==="All"||v.cat===cat) && (includeWatched||!p.watched.has(v.id)) && !state.notInterested.includes(v.id))
-    .map(v=>({v,...scoreVideo(v,p)})).sort((a,b)=>b.s-a.s).slice(0,limit);
+  const ranked=VIDEOS.filter(v=>!ex.has(v.id) && !(v.fromSearch&&!v.custom) && (cat==="All"||v.cat===cat) && (includeWatched||!p.watched.has(v.id)) && !state.notInterested.includes(v.id))
+    .map(v=>({v,...scoreVideo(v,p)})).sort((a,b)=>b.s-a.s);
+  return diversify(ranked, 20, 3, cat==="All"?8:20).slice(0,limit);
 }
+
+// Related videos from the catalogue. Only videos that actually share something with
+// the seed (same channel, or overlapping tags) qualify — your general taste is just a
+// small tie-breaker, so a Hello video won't get chess next to it.
 function similar(seed,limit=20){
-  const p=buildProfile(); const st=new Set(seed.tags);
+  const p=buildProfile(); const st=new Set(seed.tags.filter(t=>t!=="youtube"));
   return VIDEOS.filter(v=>v.id!==seed.id && !(v.fromSearch&&!v.custom) && !state.notInterested.includes(v.id)).map(v=>{
-    const overlap=v.tags.filter(t=>st.has(t)).length;
-    let s=overlap*1.6 + (v.ch===seed.ch?2.2:0) + (v.cat===seed.cat?0.7:0) + scoreVideo(v,p).s*0.45;
+    const overlap=v.tags.filter(t=>st.has(t)).length, sameCh=v.ch===seed.ch;
+    if(!overlap && !sameCh) return null;
+    let s=overlap*1.6 + (sameCh?2.2:0) + (v.cat===seed.cat?0.7:0) + scoreVideo(v,p).s*0.15;
     if(p.watched.has(v.id)) s-=1.2;
-    let why=null;
-    if(v.ch===seed.ch) why={t:"More from "+v.ch,k:"ch"};
-    else if(overlap>=2) why={t:"Similar to what you're watching",k:"tag"};
-    else why=scoreVideo(v,p).why;
+    const why=sameCh?{t:"More from "+v.ch,k:"ch"}:{t:"Similar to what you're watching",k:"tag"};
     return {v,s,why};
-  }).sort((a,b)=>b.s-a.s).slice(0,limit);
+  }).filter(Boolean).sort((a,b)=>b.s-a.s).slice(0,limit);
 }
 function topTags(n=6){
   const p=buildProfile();

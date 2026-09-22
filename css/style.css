@@ -203,3 +203,5 @@ h1.pagetitle{font-family:var(--hand);font-size:26px;font-weight:400;padding:24px
 .wmore{position:relative}
 .wmore .menu{top:42px;right:0;width:240px}
 .pill svg{width:22px;height:22px;fill:currentColor}
+.searching.small{padding:12px 0;font-size:13px}
+.searching.small svg{width:18px;height:18px}
