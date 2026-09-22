@@ -205,3 +205,14 @@ h1.pagetitle{font-family:var(--hand);font-size:26px;font-weight:400;padding:24px
 .pill svg{width:22px;height:22px;fill:currentColor}
 .searching.small{padding:12px 0;font-size:13px}
 .searching.small svg{width:18px;height:18px}
+/* ---------- sign-in ---------- */
+#authBox .pill{height:36px;background:var(--bg3)}
+.authavatar{width:36px;height:36px;cursor:pointer;border:2px solid transparent;background:var(--yellow);color:#111}
+.authavatar.stale{border-color:#ff9f43}
+.menuinfo{display:block!important;padding:8px 16px!important;color:var(--text2);font-size:13px;line-height:18px;cursor:default}
+.menuinfo:hover{background:none!important}
+.menuinfo.ok{color:#7ed957}.menuinfo.warn{color:#ff9f43}
+.steps{margin:0 0 16px 20px;color:var(--text2);font-size:14px;line-height:22px}
+.steps b,.steps code{color:var(--text)}
+.dialog code{background:#121212;padding:1px 5px;border-radius:4px;font-size:13px}
+@media (max-width:800px){#authBox .pill span{display:none}#authBox .pill{padding:0 8px}}

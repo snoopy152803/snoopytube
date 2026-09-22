@@ -90,8 +90,9 @@ function pageSearch(q){
   const hit=(list,w)=>list.some(x=>x===w||(w.length>=4&&x.startsWith(w)));   // whole words (or a 4+ letter prefix), not substrings
   const res=VIDEOS.filter(v=>!(v.fromSearch&&!v.custom)).map(v=>{
     const t=words(v.title), c=words(v.ch), g=[...v.tags,v.cat.toLowerCase()];
-    let m=0; ql.forEach(w=>{ if(hit(t,w)) m+=3; else if(hit(c,w)) m+=2; else if(hit(g,w)) m+=1; });
-    if(ql.length && m<ql.length) return null;                 // every search word must match somewhere
+    let m=0, matched=0;
+    ql.forEach(w=>{ if(hit(t,w)){m+=3;matched++;} else if(hit(c,w)){m+=2;matched++;} else if(hit(g,w)){m+=1;matched++;} });
+    if(matched<ql.length) return null;                        // every search word must match somewhere
     const sc=scoreVideo(v,p); return {v,s:m*2+sc.s*0.1,why:sc.why};
   }).filter(Boolean).sort((a,b)=>b.s-a.s);
   // 2. Live results from YouTube itself, filled in by fillYouTubeResults() once /api/search answers

@@ -25,17 +25,20 @@ function toggleLike(id){
   state.liked=state.liked.filter(x=>x!==id); state.disliked=state.disliked.filter(x=>x!==id);
   if(!on) state.liked.unshift(id); save();
   toast(on?"Removed from liked videos":"Liked! Snoopy will fetch more like this 🦴");
+  ytRate(id, on?"none":"like");                       // also on YouTube, if signed in (auth.js)
 }
 function toggleDislike(id){
   const on=state.disliked.includes(id);
   state.liked=state.liked.filter(x=>x!==id); state.disliked=state.disliked.filter(x=>x!==id);
   if(!on) state.disliked.unshift(id); save();
   toast(on?"Dislike removed":"Got it — Snoopy will show you less of this");
+  ytRate(id, on?"none":"dislike");
 }
 function toggleSub(ch){
   const on=state.subs.includes(ch);
   state.subs=on?state.subs.filter(c=>c!==ch):[...state.subs,ch]; save();
   toast(on?"Unsubscribed from "+ch:"Subscribed to "+ch+" — Woodstock will keep an eye out"); renderNav();
+  ytSubscribe(ch, !on);
 }
 function notInterested(id){
   if(!state.notInterested.includes(id)) state.notInterested.push(id); save();

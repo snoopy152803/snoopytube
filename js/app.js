@@ -87,6 +87,8 @@ document.addEventListener("click",e=>{
   const sub=e.target.closest("[data-sub]"); if(sub){ toggleSub(sub.dataset.sub); onWatchPage()?refreshWatch(cur()):render(); return; }
   const like=e.target.closest("[data-like]"); if(like){ toggleLike(like.dataset.like); onWatchPage()?refreshWatch(cur()):render(); return; }
   const dis=e.target.closest("[data-dislike]"); if(dis){ toggleDislike(dis.dataset.dislike); onWatchPage()?refreshWatch(cur()):render(); return; }
+  if(e.target.closest("[data-signin]")){ signIn(); return; }
+  if(e.target.closest("[data-signout]")){ signOut(); return; }
   if(e.target.closest("[data-addvideo]")){ openAddDialog(); return; }
   if(e.target.closest("[data-closedialog]")||e.target.id==="dialog"){ closeDialog(); return; }
   if(e.target.closest("#loadMore")){ appendMore(); return; }
@@ -101,3 +103,4 @@ document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeDialog(); });
 mergeCustomVideos(state.custom);   // videos you added from YouTube links
 buildIndex();
 render();
+initAuth();
