@@ -29,10 +29,10 @@ async function signIn(){
   provider.addScope("https://www.googleapis.com/auth/youtube.force-ssl");
   try{
     const res = await firebase.auth().signInWithPopup(provider);
-    auth.user = res.user; auth.token = res.credential.accessToken;
-    sessionStorage.setItem("snoopytube.yt", JSON.stringify({ token: auth.token, exp: Date.now() + 55 * 60 * 1000 }));
-    toast("Signed in as " + res.user.displayName + " — likes and subscriptions now sync to YouTube");
-    importSubscriptions();
+    auth.user = res.user; auth.token = res.credential?.accessToken || null;
+    if(auth.token) sessionStorage.setItem("snoopytube.yt", JSON.stringify({ token: auth.token, exp: Date.now() + 55 * 60 * 1000 }));
+    if(!auth.token) toast("Signed in, but YouTube permission wasn't granted — sign out and back in, and tick the YouTube box");
+    else { toast("Signed in as " + res.user.displayName + " — likes and subscriptions now sync to YouTube"); importSubscriptions(); }
   }catch(e){ toast("Sign-in failed: " + (e.message || e.code)); }
   renderAuthButton();
 }
@@ -48,11 +48,20 @@ async function ytApi(method, path, body){
   const j = await r.json().catch(() => ({}));
   if(!r.ok){
     if(r.status === 401){ auth.token = null; sessionStorage.removeItem("snoopytube.yt"); renderAuthButton(); throw new Error("YouTube session expired — click your avatar to reconnect"); }
-    throw new Error(j.error?.errors?.[0]?.reason || j.error?.message || "YouTube API error " + r.status);
+    const reason = j.error?.errors?.[0]?.reason || "";
+    throw Object.assign(new Error(FRIENDLY[reason] || j.error?.message || "YouTube API error " + r.status), { reason });
   }
   return j;
 }
-const syncFail = e => toast("Couldn't sync to YouTube: " + e.message);
+// Plain-English versions of the API errors you're most likely to hit.
+const FRIENDLY = {
+  accessNotConfigured: "YouTube Data API v3 isn't enabled on your Firebase project yet — enable it in Google Cloud, then reload",
+  quotaExceeded: "Your project's YouTube API quota for today is used up — it resets at midnight Pacific time",
+  insufficientPermissions: "SnoopyTube wasn't granted YouTube permission — sign out and back in, and tick the YouTube box",
+  forbidden: "YouTube refused that — your Google account may not have a YouTube channel yet",
+  subscriptionDuplicate: "You're already subscribed on YouTube (it only counts once)",
+};
+const syncFail = e => toast(e.reason === "subscriptionDuplicate" ? FRIENDLY.subscriptionDuplicate : "Couldn't sync to YouTube: " + e.message);
 
 async function ytRate(id, rating){                 // rating: "like" | "dislike" | "none"
   if(!ytConnected()) return;
@@ -77,7 +86,7 @@ async function ytSubscribe(chName, on){
       const sid = j.items?.[0]?.id;
       if(sid){ await ytApi("DELETE", `subscriptions?id=${sid}`); toast("Unsubscribed on YouTube too"); }
     }
-  }catch(e){ e.message === "subscriptionDuplicate" ? toast("You're already subscribed on YouTube (it only counts once)") : syncFail(e); }
+  }catch(e){ syncFail(e); }
 }
 // Pull your real YouTube subscriptions in so Snoopy's notes start from what you already like.
 async function importSubscriptions(){

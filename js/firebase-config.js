@@ -15,10 +15,14 @@
 //     → Data access: add scope  https://www.googleapis.com/auth/youtube.force-ssl
 //
 // Leave apiKey empty and the Sign in button explains these steps instead.
+// (Filled in for project snoopytube152803.)
 
 const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  appId: "",
+  apiKey: "AIzaSyA8ng8duYMQ2j17NRq4LycSydgKTUq8v-M",
+  authDomain: "snoopytube152803.firebaseapp.com",
+  projectId: "snoopytube152803",
+  storageBucket: "snoopytube152803.firebasestorage.app",
+  messagingSenderId: "90167556283",
+  appId: "1:90167556283:web:ec56bf9df52eba5449d19e",
+  measurementId: "G-VQX35T3Z3C",
 };
