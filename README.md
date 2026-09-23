@@ -18,6 +18,8 @@ A YouTube-style site where Snoopy learns what you like and fetches videos for yo
   menu, and your likes, dislikes and subscriptions on SnoopyTube are applied to your
   real YouTube account through the YouTube Data API. Sign-in and YouTube access are
   separate steps, so sign-in works even before the YouTube API setup is finished.
+  Google shows an "unverified app" screen (Advanced → Go to) because the project
+  isn't formally verified; publishing it to production stops the consent expiring.
   It also imports your YouTube subscriptions into Snoopy's notes. Needs a free Firebase
   project — setup steps are at the top of `js/firebase-config.js`. (YouTube refuses
   duplicate subscriptions, so this can't be used to "subscribe twice".)

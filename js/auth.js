@@ -167,7 +167,8 @@ function openYouTubeHelp(){
       <li><a href="https://console.cloud.google.com/auth/audience?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">OAuth consent screen → Audience</a> → add your Google account under <b>Test users</b></li>
     </ol>
     <p>Then choose <b>Connect YouTube</b> from your avatar menu. Until then SnoopyTube still works — likes just stay local.</p>
-    <p class="note"><b>“Google hasn’t verified this app”?</b> That’s expected, and it means the setup worked. Your project is in <i>Testing</i> mode, and Google shows that screen for any unverified app asking for YouTube access — including your own. Click <b>Advanced</b> → <b>Go to (unsafe)</b> to continue. Verification is only needed if you want other people to sign in; while in Testing, only the accounts you added as test users can.</p>
+    <p class="note"><b>“Google hasn’t verified this app”?</b> Expected — it actually means the setup worked. Google shows that screen for any app asking for YouTube access that it hasn’t formally reviewed, including your own. Click <b>Advanced</b> → <b>Go to (unsafe)</b> to continue.<br><br>
+    This project is <b>published to production</b>, so that consent lasts. (In <i>Testing</i> mode Google expires it after 7 days and you have to reconnect weekly.) Unverified apps can have up to 100 users total, which is plenty here. Formal verification would remove the warning screen but needs a privacy policy, a verified domain and a demo video reviewed by Google.</p>
     <div class="dlgbtns"><button class="pill" data-closedialog>Close</button><button class="pill primary" data-connectyt>Try connecting</button></div></div>`;
   d.classList.add("open");
 }

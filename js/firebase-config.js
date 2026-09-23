@@ -14,8 +14,10 @@
 //     test user (while the app is in "Testing" mode only listed users can sign in)
 //     → Data access: add scope  https://www.googleapis.com/auth/youtube.force-ssl
 //
-// On first sign-in Google shows "Google hasn't verified this app" — that's normal for a
-// project in Testing mode requesting YouTube access. Click Advanced → Go to (unsafe).
+//  7. APIs & Services → OAuth consent screen → Audience → "Publish app" (production).
+//     Testing mode expires every consent after 7 days; production doesn't. The
+//     "Google hasn't verified this app" screen stays either way — click
+//     Advanced → Go to (unsafe). Removing that screen needs formal verification.
 //
 // Leave apiKey empty and the Sign in button explains these steps instead.
 // (Filled in for project snoopytube152803.)
