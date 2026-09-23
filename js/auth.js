@@ -10,7 +10,8 @@
 // Nothing here runs without a signed-in user; SnoopyTube's local history is unaffected.
 
 const YT_API = "https://www.googleapis.com/youtube/v3/";
-const auth = { user: null, token: null };
+const YT_SCOPE = "https://www.googleapis.com/auth/youtube.force-ssl";
+const auth = { user: null, token: null, busy: false };
 
 const authConfigured = () => typeof firebase !== "undefined" && FIREBASE_CONFIG.apiKey;
 const ytConnected = () => !!(auth.user && auth.token);
@@ -23,18 +24,52 @@ function initAuth(){
   firebase.auth().onAuthStateChanged(u => { auth.user = u; renderAuthButton(); });
 }
 
+// Two steps on purpose:
+//   signIn()          — plain Google sign-in. Works with a stock Firebase project.
+//   connectYouTube()  — asks for the extra youtube.force-ssl permission, which needs
+//                       the YouTube Data API enabled and the scope on your OAuth
+//                       consent screen. Kept separate so a hiccup there can't stop
+//                       you signing in at all.
+async function popup(scopes){
+  if(auth.busy) return null;                       // a second popup cancels the first
+  auth.busy = true;
+  try{
+    const provider = new firebase.auth.GoogleAuthProvider();
+    (scopes || []).forEach(sc => provider.addScope(sc));
+    return await firebase.auth().signInWithPopup(provider);
+  } finally { auth.busy = false; }
+}
 async function signIn(){
   if(!authConfigured()) return openSetupDialog();
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.addScope("https://www.googleapis.com/auth/youtube.force-ssl");
   try{
-    const res = await firebase.auth().signInWithPopup(provider);
-    auth.user = res.user; auth.token = res.credential?.accessToken || null;
-    if(auth.token) sessionStorage.setItem("snoopytube.yt", JSON.stringify({ token: auth.token, exp: Date.now() + 55 * 60 * 1000 }));
-    if(!auth.token) toast("Signed in, but YouTube permission wasn't granted — sign out and back in, and tick the YouTube box");
-    else { toast("Signed in as " + res.user.displayName + " — likes and subscriptions now sync to YouTube"); importSubscriptions(); }
-  }catch(e){ toast("Sign-in failed: " + (e.message || e.code)); }
+    const res = await popup(); if(!res) return;
+    auth.user = res.user;
+    toast("Signed in as " + (res.user.displayName || res.user.email));
+  }catch(e){ toast(authError(e)); }
   renderAuthButton();
+}
+async function connectYouTube(){
+  try{
+    const res = await popup([YT_SCOPE]); if(!res) return;
+    auth.user = res.user; auth.token = res.credential?.accessToken || null;
+    if(!auth.token) return toast("Google didn't grant YouTube access — try again and tick the YouTube permission");
+    sessionStorage.setItem("snoopytube.yt", JSON.stringify({ token: auth.token, exp: Date.now() + 55 * 60 * 1000 }));
+    toast("YouTube connected — likes and subscriptions now sync ✓");
+    importSubscriptions();
+  }catch(e){ toast(authError(e)); }
+  renderAuthButton();
+}
+// Firebase's error codes, in plain English.
+function authError(e){
+  const code = (e && e.code || "").replace("auth/", "");
+  return {
+    "popup-closed-by-user": "Sign-in window was closed before finishing",
+    "cancelled-popup-request": "Another sign-in window was already open — try once more",
+    "popup-blocked": "Your browser blocked the sign-in popup — allow popups for this site",
+    "operation-not-allowed": "Google sign-in isn't enabled in the Firebase console yet",
+    "unauthorized-domain": "This domain isn't in Firebase → Authentication → Settings → Authorized domains",
+    "internal-error": "Google rejected the request — the YouTube scope probably isn't set up on the OAuth consent screen yet (see js/firebase-config.js)",
+  }[code] || ("Sign-in failed: " + (e.message || code));
 }
 function signOut(){
   firebase.auth().signOut(); auth.user = null; auth.token = null;
@@ -108,21 +143,30 @@ function renderAuthButton(){
   box.innerHTML = `<div class="wmore"><button class="avatar authavatar ${auth.token ? "" : "stale"}" data-menu="auth" title="${esc(auth.user.displayName || "")}">${pic}</button>
     <div class="menu" id="menu-auth">
       <div class="menuinfo"><b>${esc(auth.user.displayName || "")}</b><br><small>${esc(auth.user.email || "")}</small></div>
-      <div class="menuinfo ${auth.token ? "ok" : "warn"}">${auth.token ? "✓ Likes & subscriptions sync to YouTube" : "⚠ YouTube link expired"}</div>
-      ${auth.token ? "" : `<div data-signin>${ICONS.google}Reconnect YouTube</div>`}
+      <div class="menuinfo ${auth.token ? "ok" : "warn"}">${auth.token ? "✓ Likes & subscriptions sync to YouTube" : "⚠ Not connected to YouTube — likes stay on SnoopyTube"}</div>
+      ${auth.token ? "" : `<div data-connectyt>${ICONS.yt}Connect YouTube</div><div data-ythelp>${ICONS.spark}Why isn't it connecting?</div>`}
       <div data-signout>${ICONS.block}Sign out</div>
     </div></div>`;
 }
 function openSetupDialog(){
   const d = document.getElementById("dialog");
   d.innerHTML = `<div class="dialog"><h2>${ICONS.google} Google sign-in isn't set up yet</h2>
-    <p>Signing in lets your likes, dislikes and subscriptions on SnoopyTube apply to your real YouTube account. It needs a free Firebase project — the steps are in <code>js/firebase-config.js</code>:</p>
-    <ol class="steps">
-      <li>Create a Firebase project and add a Web app; paste its config into <code>js/firebase-config.js</code></li>
-      <li>Authentication → Sign-in method → enable <b>Google</b></li>
-      <li>Authentication → Settings → Authorized domains → add <b>snoopytube.vercel.app</b></li>
-      <li>In Google Cloud (same project): enable <b>YouTube Data API v3</b>, add the <b>youtube.force-ssl</b> scope and yourself as a test user</li>
-    </ol>
+    <p>Paste your Firebase project's web config into <code>js/firebase-config.js</code> — the full steps are in the comment at the top of that file.</p>
     <div class="dlgbtns"><button class="pill primary" data-closedialog>Got it</button></div></div>`;
+  d.classList.add("open");
+}
+// Shown from the menu when YouTube sync isn't working yet.
+function openYouTubeHelp(){
+  const p = FIREBASE_CONFIG.projectId, n = FIREBASE_CONFIG.messagingSenderId || p;
+  const d = document.getElementById("dialog");
+  d.innerHTML = `<div class="dialog"><h2>${ICONS.yt} Connecting YouTube</h2>
+    <p>To apply your likes and subscriptions to your real YouTube account, two things need turning on in Google Cloud for project <code>${esc(p)}</code>:</p>
+    <ol class="steps">
+      <li><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">Enable <b>YouTube Data API v3</b></a></li>
+      <li><a href="https://console.cloud.google.com/auth/scopes?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">OAuth consent screen → Data access</a> → add the scope <code>youtube.force-ssl</code></li>
+      <li><a href="https://console.cloud.google.com/auth/audience?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">OAuth consent screen → Audience</a> → add your Google account under <b>Test users</b></li>
+    </ol>
+    <p>Then come back and choose <b>Connect YouTube</b> from your avatar menu. Until then SnoopyTube still works — likes just stay local.</p>
+    <div class="dlgbtns"><button class="pill" data-closedialog>Close</button><button class="pill primary" data-connectyt>Try connecting</button></div></div>`;
   d.classList.add("open");
 }

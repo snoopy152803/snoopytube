@@ -89,6 +89,8 @@ document.addEventListener("click",e=>{
   const dis=e.target.closest("[data-dislike]"); if(dis){ toggleDislike(dis.dataset.dislike); onWatchPage()?refreshWatch(cur()):render(); return; }
   if(e.target.closest("[data-signin]")){ signIn(); return; }
   if(e.target.closest("[data-signout]")){ signOut(); return; }
+  if(e.target.closest("[data-connectyt]")){ closeDialog(); connectYouTube(); return; }
+  if(e.target.closest("[data-ythelp]")){ openYouTubeHelp(); return; }
   if(e.target.closest("[data-addvideo]")){ openAddDialog(); return; }
   if(e.target.closest("[data-closedialog]")||e.target.id==="dialog"){ closeDialog(); return; }
   if(e.target.closest("#loadMore")){ appendMore(); return; }
