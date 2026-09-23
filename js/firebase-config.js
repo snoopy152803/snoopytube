@@ -14,6 +14,9 @@
 //     test user (while the app is in "Testing" mode only listed users can sign in)
 //     → Data access: add scope  https://www.googleapis.com/auth/youtube.force-ssl
 //
+// On first sign-in Google shows "Google hasn't verified this app" — that's normal for a
+// project in Testing mode requesting YouTube access. Click Advanced → Go to (unsafe).
+//
 // Leave apiKey empty and the Sign in button explains these steps instead.
 // (Filled in for project snoopytube152803.)
 

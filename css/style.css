@@ -216,3 +216,5 @@ h1.pagetitle{font-family:var(--hand);font-size:26px;font-weight:400;padding:24px
 .steps b,.steps code{color:var(--text)}
 .dialog code{background:#121212;padding:1px 5px;border-radius:4px;font-size:13px}
 @media (max-width:800px){#authBox .pill span{display:none}#authBox .pill{padding:0 8px}}
+.dialog .note{background:var(--bg3);border-left:3px solid var(--yellow);border-radius:6px;padding:10px 12px;font-size:13px;line-height:19px;margin-bottom:16px}
+.dialog .note b{color:var(--text)}
