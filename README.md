@@ -18,8 +18,8 @@ A YouTube-style site where Snoopy learns what you like and fetches videos for yo
   menu, and your likes, dislikes and subscriptions on SnoopyTube are applied to your
   real YouTube account through the YouTube Data API. Sign-in and YouTube access are
   separate steps, so sign-in works even before the YouTube API setup is finished.
-  Google shows an "unverified app" screen (Advanced → Go to) because the project
-  isn't formally verified; publishing it to production stops the consent expiring.
+  Google shows an "unverified app" screen the first time (Advanced → Go to); the app
+  explains this before opening the popup. Owner setup lives in SETUP.md.
   It also imports your YouTube subscriptions into Snoopy's notes. Needs a free Firebase
   project — setup steps are at the top of `js/firebase-config.js`. (YouTube refuses
   duplicate subscriptions, so this can't be used to "subscribe twice".)
@@ -29,6 +29,12 @@ A YouTube-style site where Snoopy learns what you like and fetches videos for yo
   `yt-dlp` and `ffmpeg` installed — Vercel can't run them, so the live site says so.
 - Recommendations are computed in your browser from what you watch, like, dislike and
   subscribe to. Everything is stored in `localStorage`; nothing leaves your machine.
+
+## No ads, no tracking
+
+SnoopyTube shows no ads of its own and collects nothing — your history and
+recommendations live in your browser's localStorage. Videos play in YouTube's
+embedded player, so YouTube's own ads still appear on videos that have them.
 
 ## Files
 
@@ -41,7 +47,7 @@ A YouTube-style site where Snoopy learns what you like and fetches videos for yo
 | `dev.js` | Local server that serves the site *and* runs `api/search.js` |
 | `js/catalogue.js` | The `VIDEOS` list and `addVideos()` helper (loaded first) |
 | `js/data/*.js` | The built-in videos, one file per group; `channels.js` has channel photos |
-| `js/firebase-config.js` | Your Firebase web config + the setup steps |
+| `js/firebase-config.js` | Firebase web config (public by design; see SETUP.md) |
 | `js/auth.js` | Google sign-in and the YouTube like/subscribe sync |
 | `js/state.js` | History / likes / subs / added videos in localStorage, and the actions |
 | `js/recommend.js` | The recommendation engine — the brain |

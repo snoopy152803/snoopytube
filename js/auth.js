@@ -67,8 +67,8 @@ function authError(e){
     "cancelled-popup-request": "Another sign-in window was already open — try once more",
     "popup-blocked": "Your browser blocked the sign-in popup — allow popups for this site",
     "operation-not-allowed": "Google sign-in isn't enabled in the Firebase console yet",
-    "unauthorized-domain": "This domain isn't in Firebase → Authentication → Settings → Authorized domains",
-    "internal-error": "Google rejected the request — the YouTube scope probably isn't set up on the OAuth consent screen yet (see js/firebase-config.js)",
+    "unauthorized-domain": "Sign-in isn't allowed from this address",
+    "internal-error": "Google turned the request down — YouTube syncing may not be switched on for this site yet",
   }[code] || ("Sign-in failed: " + (e.message || code));
 }
 function signOut(){
@@ -90,9 +90,9 @@ async function ytApi(method, path, body){
 }
 // Plain-English versions of the API errors you're most likely to hit.
 const FRIENDLY = {
-  accessNotConfigured: "YouTube Data API v3 isn't enabled on your Firebase project yet — enable it in Google Cloud, then reload",
-  quotaExceeded: "Your project's YouTube API quota for today is used up — it resets at midnight Pacific time",
-  insufficientPermissions: "SnoopyTube wasn't granted YouTube permission — sign out and back in, and tick the YouTube box",
+  accessNotConfigured: "YouTube syncing is switched off on this site right now — your likes are still saved here",
+  quotaExceeded: "SnoopyTube has hit YouTube's daily limit — it resets at midnight Pacific time. Your likes are still saved here",
+  insufficientPermissions: "YouTube permission wasn't granted — reconnect from your avatar menu and tick the YouTube box",
   forbidden: "YouTube refused that — your Google account may not have a YouTube channel yet",
   subscriptionDuplicate: "You're already subscribed on YouTube (it only counts once)",
 };
@@ -101,7 +101,7 @@ function syncFail(e){
   toast("Couldn't sync to YouTube: " + e.message);
   // These two are fixed in the Google Cloud console — open the help dialog so the
   // links are one click away instead of buried in a toast.
-  if(e.reason === "accessNotConfigured" || e.reason === "insufficientPermissions") setTimeout(openYouTubeHelp, 600);
+  if(e.reason === "insufficientPermissions") setTimeout(openYouTubeHelp, 600);
 }
 
 async function ytRate(id, rating){                 // rating: "like" | "dislike" | "none"
@@ -150,31 +150,31 @@ function renderAuthButton(){
     <div class="menu" id="menu-auth">
       <div class="menuinfo"><b>${esc(auth.user.displayName || "")}</b><br><small>${esc(auth.user.email || "")}</small></div>
       <div class="menuinfo ${auth.token ? "ok" : "warn"}">${auth.token ? "✓ Likes & subscriptions sync to YouTube" : "⚠ Not connected to YouTube — likes stay on SnoopyTube"}</div>
-      ${auth.token ? "" : `<div data-connectyt>${ICONS.yt}Connect YouTube</div><div data-ythelp>${ICONS.spark}Why isn't it connecting?</div>`}
+      ${auth.token ? "" : `<div data-ythelp>${ICONS.yt}Connect YouTube</div>`}
       <div data-signout>${ICONS.block}Sign out</div>
     </div></div>`;
 }
 function openSetupDialog(){
   const d = document.getElementById("dialog");
-  d.innerHTML = `<div class="dialog"><h2>${ICONS.google} Google sign-in isn't set up yet</h2>
-    <p>Paste your Firebase project's web config into <code>js/firebase-config.js</code> — the full steps are in the comment at the top of that file.</p>
+  d.innerHTML = `<div class="dialog"><h2>${ICONS.google} Sign-in isn't available here</h2>
+    <p>Signing in isn't available on this copy of SnoopyTube. Everything else works — your history and recommendations are saved in this browser.</p>
     <div class="dlgbtns"><button class="pill primary" data-closedialog>Got it</button></div></div>`;
   d.classList.add("open");
 }
 // Shown from the menu when YouTube sync isn't working yet.
+// Shown before the Google popup, and from the avatar menu. Written for whoever is
+// using the site — no console links or project settings; those live in SETUP.md.
 function openYouTubeHelp(){
-  const p = FIREBASE_CONFIG.projectId, n = FIREBASE_CONFIG.messagingSenderId || p;
+  const host = (FIREBASE_CONFIG.authDomain || "").replace(/\/$/, "");
   const d = document.getElementById("dialog");
   d.innerHTML = `<div class="dialog"><h2>${ICONS.yt} Connecting YouTube</h2>
-    <p>To apply your likes and subscriptions to your real YouTube account, two things need turning on in Google Cloud for project <code>${esc(p)}</code>:</p>
-    <ol class="steps">
-      <li><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com?project=${encodeURIComponent(p)}" target="_blank" rel="noopener">Enable <b>YouTube Data API v3</b></a> — check the project picker says <code>${esc(p)}</code>, then give it 2–3 minutes</li>
-      <li><a href="https://console.cloud.google.com/auth/scopes?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">OAuth consent screen → Data access</a> → add the scope <code>youtube.force-ssl</code></li>
-      <li><a href="https://console.cloud.google.com/auth/audience?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">OAuth consent screen → Audience</a> → add your Google account under <b>Test users</b></li>
-    </ol>
-    <p>Then choose <b>Connect YouTube</b> from your avatar menu. Until then SnoopyTube still works — likes just stay local.</p>
-    <p class="note"><b>“Google hasn’t verified this app”?</b> Expected — it actually means the setup worked. Google shows that screen for any app asking for YouTube access that it hasn’t formally reviewed, including your own. Click <b>Advanced</b> → <b>Go to (unsafe)</b> to continue.<br><br>
-    This project is <b>published to production</b>, so that consent lasts. (In <i>Testing</i> mode Google expires it after 7 days and you have to reconnect weekly.) Unverified apps can have up to 100 users total, which is plenty here. Formal verification would remove the warning screen but needs a privacy policy, a verified domain and a demo video reviewed by Google.</p>
-    <div class="dlgbtns"><button class="pill" data-closedialog>Close</button><button class="pill primary" data-connectyt>Try connecting</button></div></div>`;
+    <p>This lets your likes, dislikes and subscriptions here apply to your real YouTube account. Google will ask your permission in a popup.</p>
+    <p class="note"><b>You'll see a warning — that's expected.</b><br>
+      Google shows “<i>Google hasn't verified this app</i>” for any small app asking for YouTube access. To continue:<br><br>
+      1. Click <b>Advanced</b> (bottom left of that screen)<br>
+      2. Click <b>Go to ${esc(host)} (unsafe)</b><br>
+      3. Tick the YouTube permission and press <b>Continue</b></p>
+    <p>You can skip this entirely — SnoopyTube works fine without it, your likes just stay on this site.</p>
+    <div class="dlgbtns"><button class="pill" data-closedialog>Not now</button><button class="pill primary" data-connectyt>Continue to Google</button></div></div>`;
   d.classList.add("open");
 }
