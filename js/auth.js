@@ -96,7 +96,13 @@ const FRIENDLY = {
   forbidden: "YouTube refused that — your Google account may not have a YouTube channel yet",
   subscriptionDuplicate: "You're already subscribed on YouTube (it only counts once)",
 };
-const syncFail = e => toast(e.reason === "subscriptionDuplicate" ? FRIENDLY.subscriptionDuplicate : "Couldn't sync to YouTube: " + e.message);
+function syncFail(e){
+  if(e.reason === "subscriptionDuplicate") return toast(FRIENDLY.subscriptionDuplicate);
+  toast("Couldn't sync to YouTube: " + e.message);
+  // These two are fixed in the Google Cloud console — open the help dialog so the
+  // links are one click away instead of buried in a toast.
+  if(e.reason === "accessNotConfigured" || e.reason === "insufficientPermissions") setTimeout(openYouTubeHelp, 600);
+}
 
 async function ytRate(id, rating){                 // rating: "like" | "dislike" | "none"
   if(!ytConnected()) return;
@@ -162,7 +168,7 @@ function openYouTubeHelp(){
   d.innerHTML = `<div class="dialog"><h2>${ICONS.yt} Connecting YouTube</h2>
     <p>To apply your likes and subscriptions to your real YouTube account, two things need turning on in Google Cloud for project <code>${esc(p)}</code>:</p>
     <ol class="steps">
-      <li><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">Enable <b>YouTube Data API v3</b></a></li>
+      <li><a href="https://console.cloud.google.com/apis/library/youtube.googleapis.com?project=${encodeURIComponent(p)}" target="_blank" rel="noopener">Enable <b>YouTube Data API v3</b></a> — check the project picker says <code>${esc(p)}</code>, then give it 2–3 minutes</li>
       <li><a href="https://console.cloud.google.com/auth/scopes?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">OAuth consent screen → Data access</a> → add the scope <code>youtube.force-ssl</code></li>
       <li><a href="https://console.cloud.google.com/auth/audience?project=${encodeURIComponent(n)}" target="_blank" rel="noopener">OAuth consent screen → Audience</a> → add your Google account under <b>Test users</b></li>
     </ol>
