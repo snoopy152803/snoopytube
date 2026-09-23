@@ -13,3 +13,9 @@ const FIREBASE_CONFIG = {
   appId: "1:90167556283:web:ec56bf9df52eba5449d19e",
   measurementId: "G-VQX35T3Z3C",
 };
+
+// The OAuth client Firebase created for this project. Public, like the config above.
+// Used to refresh the YouTube token in the background so you aren't asked to
+// reconnect every hour. For that to work, this site's address must be listed under
+// the client's "Authorized JavaScript origins" — see SETUP.md.
+const OAUTH_CLIENT_ID = "90167556283-6252hkhhkd59p6rkhtku33u9bhcet5gs.apps.googleusercontent.com";

@@ -26,12 +26,25 @@ Google's verification process: a privacy policy on a domain you own, branding, a
 written scope justification and a demo video, reviewed by a person at Google
 (they quote 3–5 business days). Unverified apps are capped at 100 users total.
 
-## Why does YouTube need reconnecting sometimes?
+## Silent token refresh (one console step)
 
-Google access tokens last about an hour — that's Google's rule, not something the
-app chooses. SnoopyTube keeps the token in localStorage so closing the tab doesn't
-lose it, and when one does run out a **Reconnect** button appears in the header.
-Whatever you were doing (the like or subscribe) is replayed once you reconnect.
+Google access tokens last about an hour. SnoopyTube refreshes them in the background
+with Google Identity Services so nobody has to keep clicking Reconnect — but Google
+only allows that from origins you've listed on the OAuth client.
+
+1. [Google Cloud → APIs & Services → Credentials](https://console.cloud.google.com/apis/credentials)
+2. Under **OAuth 2.0 Client IDs**, open the **Web client (auto created by Google Service)**
+3. Under **Authorized JavaScript origins**, add:
+   - `https://snoopytube.vercel.app`
+   - `http://localhost:8765` (only if you run it locally)
+4. **Save**, then wait a few minutes — Google is slow to apply this one
+
+Until that's done everything still works; the token just can't refresh silently, so
+the **Reconnect** button appears when one expires. The app detects the origin
+rejection and stops retrying rather than looping.
+
+Whatever you were doing (a like or subscribe) is replayed once the token comes back,
+whether that was silent or via the button.
 
 ## Is the Firebase config secret?
 

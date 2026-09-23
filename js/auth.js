@@ -40,11 +40,55 @@ function loadToken(){
 function clearToken(){ auth.token = null; try{ localStorage.removeItem(TOKEN_KEY); }catch(e){} }
 const everConnected = () => { try{ return localStorage.getItem(EVER_KEY) === "1"; }catch(e){ return false; } };
 
+/* ---------- silent refresh ----------
+   Google's tokens last about an hour. Rather than make you click Reconnect each
+   time, we ask Google Identity Services for a fresh one in the background. That
+   only works once you've granted the permission and are still signed in to Google;
+   if it can't, we fall back to the Reconnect button. Needs this site's address in
+   the OAuth client's "Authorized JavaScript origins" (SETUP.md). */
+let tokenClient = null, silentBlocked = false;
+function getTokenClient(){
+  if(tokenClient) return tokenClient;
+  if(silentBlocked || typeof OAUTH_CLIENT_ID === "undefined" || !OAUTH_CLIENT_ID) return null;
+  if(typeof google === "undefined" || !google.accounts || !google.accounts.oauth2) return null;
+  tokenClient = google.accounts.oauth2.initTokenClient({ client_id: OAUTH_CLIENT_ID, scope: YT_SCOPE, callback: () => {} });
+  return tokenClient;
+}
+function silentToken(){
+  return new Promise(resolve => {
+    const tc = silentBlocked ? null : getTokenClient();
+    if(!tc) return resolve(false);
+    let settled = false;
+    const finish = ok => { if(!settled){ settled = true; resolve(ok); } };
+    tc.callback = res => {
+      if(res && res.access_token){ saveToken(res.access_token, Number(res.expires_in) || 3600); renderAuthButton(); finish(true); }
+      else finish(false);
+    };
+    tc.error_callback = err => {
+      // A wrong origin never fixes itself — stop retrying and use the button.
+      if(err && /origin|idpiframe|popup_failed/i.test(err.type || err.message || "")) silentBlocked = true;
+      finish(false);
+    };
+    try{ tc.requestAccessToken({ prompt: "" }); }catch(e){ finish(false); }
+    setTimeout(() => finish(false), 8000);
+  });
+}
+// Make sure we have a usable token, refreshing quietly if we can.
+async function ensureToken(){
+  if(auth.token) return true;
+  if(!auth.user || !everConnected()) return false;
+  return silentToken();
+}
+
 function initAuth(){
   if(!authConfigured()) return renderAuthButton();
   firebase.initializeApp(FIREBASE_CONFIG);
   loadToken();
-  firebase.auth().onAuthStateChanged(u => { auth.user = u; if(!u) clearToken(); renderAuthButton(); });
+  firebase.auth().onAuthStateChanged(u => {
+    auth.user = u; if(!u) clearToken();
+    renderAuthButton();
+    if(u && !auth.token && everConnected()) ensureToken().then(renderAuthButton);
+  });
 }
 
 // Two steps on purpose:
@@ -68,6 +112,7 @@ async function signIn(){
     const res = await popup(); if(!res) return;
     auth.user = res.user;
     toast("Signed in as " + (res.user.displayName || res.user.email));
+    if(everConnected()) await ensureToken();     // returning user: reconnect YouTube quietly
   }catch(e){ toast(authError(e)); }
   renderAuthButton();
 }
@@ -146,9 +191,19 @@ function flushPending(){
 
 async function ytRate(id, rating){                 // rating: "like" | "dislike" | "none"
   if(!auth.user) return;
-  if(!auth.token) return needsReconnect({ kind: "rate", id, rating });
-  try{ await ytApi("POST", `videos/rate?id=${id}&rating=${rating}`); toast(rating === "none" ? "Rating removed on YouTube too" : `Also ${rating}d on YouTube ✓`); }
-  catch(e){ syncFail(e); }
+  if(!await ensureToken()) return needsReconnect({ kind: "rate", id, rating });
+  try{
+    await retrying(() => ytApi("POST", `videos/rate?id=${id}&rating=${rating}`));
+    toast(rating === "none" ? "Rating removed on YouTube too" : `Also ${rating}d on YouTube ✓`);
+  }catch(e){ e.reason === "expired" ? needsReconnect({ kind: "rate", id, rating }) : syncFail(e); }
+}
+// One retry: if the token expired mid-request, refresh quietly and go again.
+async function retrying(call){
+  try{ return await call(); }
+  catch(e){
+    if(e.reason !== "expired" || !(await silentToken())) throw e;
+    return call();
+  }
 }
 async function channelIdFor(v){
   if(v.channelId) return v.channelId;
@@ -157,7 +212,7 @@ async function channelIdFor(v){
 }
 async function ytSubscribe(chName, on){
   if(!auth.user) return;
-  if(!auth.token) return needsReconnect({ kind: "sub", ch: chName, on });
+  if(!await ensureToken()) return needsReconnect({ kind: "sub", ch: chName, on });
   const v = VIDEOS.find(x => x.ch === chName); if(!v) return;
   try{
     const channelId = await channelIdFor(v); if(!channelId) throw new Error("channel not found");
