@@ -26,6 +26,13 @@ Google's verification process: a privacy policy on a domain you own, branding, a
 written scope justification and a demo video, reviewed by a person at Google
 (they quote 3–5 business days). Unverified apps are capped at 100 users total.
 
+## Why does YouTube need reconnecting sometimes?
+
+Google access tokens last about an hour — that's Google's rule, not something the
+app chooses. SnoopyTube keeps the token in localStorage so closing the tab doesn't
+lose it, and when one does run out a **Reconnect** button appears in the header.
+Whatever you were doing (the like or subscribe) is replayed once you reconnect.
+
 ## Is the Firebase config secret?
 
 No. A Firebase **web** config identifies the project and is designed to ship in

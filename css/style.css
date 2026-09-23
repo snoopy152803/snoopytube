@@ -218,3 +218,7 @@ h1.pagetitle{font-family:var(--hand);font-size:26px;font-weight:400;padding:24px
 @media (max-width:800px){#authBox .pill span{display:none}#authBox .pill{padding:0 8px}}
 .dialog .note{background:var(--bg3);border-left:3px solid var(--yellow);border-radius:6px;padding:10px 12px;font-size:13px;line-height:19px;margin-bottom:16px}
 .dialog .note b{color:var(--text)}
+#authBox{display:flex;align-items:center;gap:8px}
+.pill.reconnect{background:#3a2a10;color:var(--yellow);border:1px solid #6b5220;height:36px}
+.pill.reconnect:hover{background:#4a3614}
+@media (max-width:800px){.pill.reconnect span{display:none}.pill.reconnect{padding:0 8px}}

@@ -16,12 +16,35 @@ const auth = { user: null, token: null, busy: false };
 const authConfigured = () => typeof firebase !== "undefined" && FIREBASE_CONFIG.apiKey;
 const ytConnected = () => !!(auth.user && auth.token);
 
+/* ---------- keeping the YouTube token ----------
+   Firebase remembers who you are, but not Google's access token, so we store that
+   ourselves. It lives in localStorage (sessionStorage is wiped when you close the
+   tab, which used to log you out of YouTube every time). Google's tokens last about
+   an hour, so when one runs out we ask for a new one with a single click and then
+   finish whatever you were doing. */
+const TOKEN_KEY = "snoopytube.yt", EVER_KEY = "snoopytube.ytconnected";
+let pendingSync = null;                      // the like/subscribe to replay after reconnecting
+
+function saveToken(token, lifetimeSec = 3600){
+  auth.token = token;
+  try{ localStorage.setItem(TOKEN_KEY, JSON.stringify({ token, exp: Date.now() + (lifetimeSec - 120) * 1000 })); localStorage.setItem(EVER_KEY, "1"); }catch(e){}
+}
+function loadToken(){
+  try{
+    const t = JSON.parse(localStorage.getItem(TOKEN_KEY) || "null");
+    if(t && t.exp > Date.now()){ auth.token = t.token; return true; }
+    localStorage.removeItem(TOKEN_KEY);
+  }catch(e){}
+  return false;
+}
+function clearToken(){ auth.token = null; try{ localStorage.removeItem(TOKEN_KEY); }catch(e){} }
+const everConnected = () => { try{ return localStorage.getItem(EVER_KEY) === "1"; }catch(e){ return false; } };
+
 function initAuth(){
   if(!authConfigured()) return renderAuthButton();
   firebase.initializeApp(FIREBASE_CONFIG);
-  // Firebase remembers the user, but not the Google access token — we keep that for the session.
-  try{ const t = JSON.parse(sessionStorage.getItem("snoopytube.yt") || "null"); if(t && t.exp > Date.now()) auth.token = t.token; }catch(e){}
-  firebase.auth().onAuthStateChanged(u => { auth.user = u; renderAuthButton(); });
+  loadToken();
+  firebase.auth().onAuthStateChanged(u => { auth.user = u; if(!u) clearToken(); renderAuthButton(); });
 }
 
 // Two steps on purpose:
@@ -51,11 +74,14 @@ async function signIn(){
 async function connectYouTube(){
   try{
     const res = await popup([YT_SCOPE]); if(!res) return;
-    auth.user = res.user; auth.token = res.credential?.accessToken || null;
-    if(!auth.token) return toast("Google didn't grant YouTube access — try again and tick the YouTube permission");
-    sessionStorage.setItem("snoopytube.yt", JSON.stringify({ token: auth.token, exp: Date.now() + 55 * 60 * 1000 }));
+    auth.user = res.user;
+    const token = res.credential?.accessToken || null;
+    if(!token) return toast("Google didn't grant YouTube access — try again and tick the YouTube permission");
+    const first = !everConnected();
+    saveToken(token);
     toast("YouTube connected — likes and subscriptions now sync ✓");
-    importSubscriptions();
+    if(first) importSubscriptions();          // only the first time, so it can't undo later changes
+    flushPending();
   }catch(e){ toast(authError(e)); }
   renderAuthButton();
 }
@@ -72,8 +98,9 @@ function authError(e){
   }[code] || ("Sign-in failed: " + (e.message || code));
 }
 function signOut(){
-  firebase.auth().signOut(); auth.user = null; auth.token = null;
-  sessionStorage.removeItem("snoopytube.yt"); toast("Signed out — SnoopyTube is back to local-only"); renderAuthButton();
+  firebase.auth().signOut(); auth.user = null; pendingSync = null; clearToken();
+  try{ localStorage.removeItem(EVER_KEY); }catch(e){}
+  toast("Signed out — SnoopyTube is back to local-only"); renderAuthButton();
 }
 
 /* ---------- YouTube API ---------- */
@@ -82,7 +109,7 @@ async function ytApi(method, path, body){
   if(r.status === 204) return {};
   const j = await r.json().catch(() => ({}));
   if(!r.ok){
-    if(r.status === 401){ auth.token = null; sessionStorage.removeItem("snoopytube.yt"); renderAuthButton(); throw new Error("YouTube session expired — click your avatar to reconnect"); }
+    if(r.status === 401){ clearToken(); renderAuthButton(); throw Object.assign(new Error("Your YouTube session ran out"), { reason: "expired" }); }
     const reason = j.error?.errors?.[0]?.reason || "";
     throw Object.assign(new Error(FRIENDLY[reason] || j.error?.message || "YouTube API error " + r.status), { reason });
   }
@@ -101,11 +128,25 @@ function syncFail(e){
   toast("Couldn't sync to YouTube: " + e.message);
   // These two are fixed in the Google Cloud console — open the help dialog so the
   // links are one click away instead of buried in a toast.
-  if(e.reason === "insufficientPermissions") setTimeout(openYouTubeHelp, 600);
+  if(e.reason === "insufficientPermissions" || e.reason === "expired") setTimeout(openYouTubeHelp, 600);
+}
+
+// Called when a sync is wanted but the token has run out: keep the action, ask once.
+function needsReconnect(action){
+  if(!auth.user || !everConnected()) return;      // never connected — don't nag
+  pendingSync = action;
+  toast("Your YouTube session ran out — reconnect to sync that");
+  renderAuthButton(); setTimeout(openYouTubeHelp, 500);
+}
+function flushPending(){
+  const a = pendingSync; pendingSync = null;
+  if(!a || !ytConnected()) return;
+  a.kind === "rate" ? ytRate(a.id, a.rating) : ytSubscribe(a.ch, a.on);
 }
 
 async function ytRate(id, rating){                 // rating: "like" | "dislike" | "none"
-  if(!ytConnected()) return;
+  if(!auth.user) return;
+  if(!auth.token) return needsReconnect({ kind: "rate", id, rating });
   try{ await ytApi("POST", `videos/rate?id=${id}&rating=${rating}`); toast(rating === "none" ? "Rating removed on YouTube too" : `Also ${rating}d on YouTube ✓`); }
   catch(e){ syncFail(e); }
 }
@@ -115,7 +156,8 @@ async function channelIdFor(v){
   v.channelId = j.items?.[0]?.snippet.channelId; return v.channelId;
 }
 async function ytSubscribe(chName, on){
-  if(!ytConnected()) return;
+  if(!auth.user) return;
+  if(!auth.token) return needsReconnect({ kind: "sub", ch: chName, on });
   const v = VIDEOS.find(x => x.ch === chName); if(!v) return;
   try{
     const channelId = await channelIdFor(v); if(!channelId) throw new Error("channel not found");
@@ -146,7 +188,8 @@ function renderAuthButton(){
     return;
   }
   const pic = auth.user.photoURL ? `<img src="${esc(auth.user.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc((auth.user.displayName || "?")[0]);
-  box.innerHTML = `<div class="wmore"><button class="avatar authavatar ${auth.token ? "" : "stale"}" data-menu="auth" title="${esc(auth.user.displayName || "")}">${pic}</button>
+  const reconnect = (!auth.token && everConnected()) ? `<button class="pill reconnect" data-ythelp title="Your YouTube session ran out">${ICONS.yt}<span>Reconnect</span></button>` : "";
+  box.innerHTML = reconnect + `<div class="wmore"><button class="avatar authavatar ${auth.token ? "" : "stale"}" data-menu="auth" title="${esc(auth.user.displayName || "")}">${pic}</button>
     <div class="menu" id="menu-auth">
       <div class="menuinfo"><b>${esc(auth.user.displayName || "")}</b><br><small>${esc(auth.user.email || "")}</small></div>
       <div class="menuinfo ${auth.token ? "ok" : "warn"}">${auth.token ? "✓ Likes & subscriptions sync to YouTube" : "⚠ Not connected to YouTube — likes stay on SnoopyTube"}</div>
