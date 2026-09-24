@@ -123,3 +123,4 @@ mergeCustomVideos(state.custom);   // videos you added from YouTube links
 buildIndex();
 render();
 initAuth();
+syncKids(); watchKids();   // the server has the final say on Kids mode

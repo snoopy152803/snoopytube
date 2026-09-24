@@ -7,6 +7,7 @@ function renderNav(){
   const tags=topTags(6); const maxW=tags.length?tags[0][1]:1;
   document.getElementById("nav").innerHTML=`
   <div class="navsec">
+    <a class="navitem kidsitem${state.kids?" kidson":""}" href="#" data-kids><span class="kidsicon">🧸</span><span>Kids mode</span>${state.kids?`<span class="kidsbadge">ON</span>`:""}</a>
     ${item("#/",ICONS.home,"Home")}
     ${item("#/trending",ICONS.trending,"Trending")}
     ${item("#/subscriptions",ICONS.subs,"Subscriptions")}
@@ -32,7 +33,6 @@ function renderNav(){
   </div>
   <div class="navsec hidemini">
     ${item("#/added",ICONS.plus,"Added by you")}
-    <a class="navitem${state.kids?" kidson":""}" href="#" data-kids><span style="width:24px;text-align:center">🧸</span><span>Kids mode${state.kids?" · on":""}</span></a>
     <a class="navitem" href="#/reset" id="resetBtn">${ICONS.reset}<span>Reset SnoopyTube</span></a>
     <div class="navsub">SnoopyTube plays real YouTube videos through YouTube's own player. Your history never leaves this browser.</div>
   </div>`;

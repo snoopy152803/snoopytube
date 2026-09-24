@@ -7,6 +7,8 @@
 // directly (CORS).
 
 const MAX_RESULTS = 20;
+const { kidsOnFor } = require("./kids.js");
+const KID_BLOCKWORDS = require("./_kidwords.js");
 
 async function searchYouTube(query, kids){
   const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query) + "&sp=EgIQAQ%253D%253D"; // sp = "videos only"
@@ -28,9 +30,17 @@ async function searchYouTube(query, kids){
   const jsonEnd = html.indexOf(";</script>", jsonStart);
   const data = JSON.parse(html.slice(jsonStart, jsonEnd));
 
-  const videos = [];
+  let videos = [];
   walk(data, videos);
+  // Restricted Mode alone still lets some horror/violence titles through, so in Kids
+  // mode we also drop anything whose title matches the word list — server-side, so a
+  // tampered page can't skip it.
+  if(kids) videos = videos.filter(v => !titleBlocked(v.title));
   return videos.slice(0, MAX_RESULTS);
+}
+
+function titleBlocked(title){
+  return String(title).toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).some(w => KID_BLOCKWORDS.includes(w));
 }
 
 // Recursively look through the JSON for {videoRenderer: {...}} objects.
@@ -62,7 +72,10 @@ function parseViews(s){
 // Plain Node http handler — works on Vercel and in dev.js.
 module.exports = async function handler(req, res){
   const params = new URL(req.url, "http://x").searchParams;
-  const q = params.get("q") || "", kids = params.get("kids") === "1";
+  const q = params.get("q") || "";
+  // The page can ask for Kids mode, but if the household has it locked on the server
+  // says so regardless — that's what stops it being turned off in devtools.
+  const kids = params.get("kids") === "1" || await kidsOnFor(req);
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "s-maxage=600, stale-while-revalidate=3600");
   res.setHeader("Vary", "Accept");   // Vercel caches each query for 10 min

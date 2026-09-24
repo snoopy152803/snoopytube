@@ -32,15 +32,18 @@ A YouTube-style site where Snoopy learns what you like and fetches videos for yo
 
 ## Kids mode
 
-Turn it on from the sidebar. It layers three filters:
+Top of the sidebar. Four layers:
 
-1. Every YouTube search is sent with the `YouTube-Restrict: Strict` header, so
-   YouTube applies its own Restricted Mode to the results
-2. Only categories listed in `KID_CATEGORIES` (`js/kids.js`) can appear
-3. Titles and tags are checked against a word list
+1. Searches go out with `YouTube-Restrict: Strict`, so YouTube applies Restricted Mode
+2. Only categories in `KID_CATEGORIES` (`js/kids.js`) appear
+3. Titles and tags are matched against a word list — on the **server** as well as the
+   client, so a tampered page still gets filtered results
+4. Optionally, only videos the creator labelled "Made for kids" (YouTube Data API,
+   needs YouTube connected). Very restrictive — most channels never use that label.
 
-Optionally set a 4-digit PIN to turn it back off. It is a filter, not a guarantee,
-and the PIN is stored in the browser — it is a speed bump, not parental control.
+The on/off state lives on the server behind an HttpOnly cookie and a PIN, so it can't
+be switched off from the console. See SETUP.md for the Blob store and for what the
+lock does and doesn't cover.
 
 ## Mobile
 

@@ -3,7 +3,7 @@
 
 /* ---------- STATE ---------- */
 const KEY="snoopytube.state.v1";
-const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],mini:false,kids:false,kidsPin:null};
+const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],mini:false,kids:false,kidsStrict:false};
 let state={...EMPTY};
 try{
   // "mytube.state.v1" is the old name from before the Snoopy makeover — keep that data.
@@ -47,7 +47,7 @@ function notInterested(id){
 function clearHistory(){ state.history=[]; save(); toast("Watch history cleared"); render(); }
 function resetAll(){
   if(!confirm("Reset all watch history, likes, subscriptions and added videos?")) return;
-  state={...EMPTY,mini:state.mini,kids:state.kids,kidsPin:state.kidsPin}; save(); toast("SnoopyTube has been reset"); render();
+  state={...EMPTY,mini:state.mini,kids:state.kids,kidsStrict:state.kidsStrict}; save(); toast("SnoopyTube has been reset"); render();
 }
 
 /* ---------- SEARCHING YOUTUBE ----------

@@ -53,3 +53,35 @@ client-side code — the app cannot authenticate without it. What protects it is
 **Authorized domains** list, which stops the config working from anyone else's site.
 The things you must never commit are *service account* keys and OAuth **client
 secrets**; this project uses neither.
+
+## Locking Kids mode (Vercel Blob)
+
+Kids mode is enforced by the server, not the browser: `api/kids.js` keeps the on/off
+state against a household id in an **HttpOnly** cookie (page JavaScript can't read or
+change it), and `api/search.js` applies Restricted Mode and the word filter based on
+that, whatever the page asks for. Turning it off needs the PIN, checked on the server,
+and the PIN is stored only as a scrypt hash.
+
+That state needs somewhere to live:
+
+* **Locally (`node dev.js`)** — a JSON file in your temp folder. Nothing to set up.
+* **On Vercel** — a Blob store:
+  1. Vercel dashboard → your project → **Storage** → **Create** → **Blob**
+  2. Connect it to the project. That sets `BLOB_READ_WRITE_TOKEN` automatically.
+  3. Redeploy.
+
+Without the token in production the lock falls back to being per-request only, so
+create the store before relying on it.
+
+### How strong is the lock?
+
+Strong enough that it can't be switched off from devtools, by editing localStorage,
+or by changing the request the page sends — all of those were the easy bypasses
+before. It is **not** device-level parental control:
+
+* Clearing cookies gives the browser a new household id, and a new household starts
+  with Kids mode off.
+* Nothing stops anyone opening youtube.com directly.
+
+For real enforcement use Screen Time / Family Link on the device, or lock YouTube
+Restricted Mode at the router — those cover the whole device, not just this site.
