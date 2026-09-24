@@ -1,0 +1,8 @@
+{
+  "name": "snoopytube",
+  "private": true,
+  "version": "1.0.0",
+  "description": "A YouTube-style site where Snoopy learns what you like.",
+  "scripts": { "dev": "node dev.js" },
+  "dependencies": { "@vercel/blob": "^2.0.0" }
+}

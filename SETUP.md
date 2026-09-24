@@ -66,18 +66,17 @@ That state needs somewhere to live:
 
 * **Locally (`node dev.js`)** — a JSON file in your temp folder. Nothing to set up.
 * **On Vercel** — a Blob store:
-  1. Vercel dashboard → your project → **Storage** → **Create Database** → **Blob**
-  2. **Connect to Project**. That sets `BLOB_READ_WRITE_TOKEN` automatically —
-     you never copy a token by hand.
-  3. **Redeploy** (environment variables only reach new deployments).
+  1. Vercel dashboard → project → **Storage** → **Create Database** → **Blob**
+  2. **Access: Private.** Public blobs are readable by anyone with the URL, and this
+     record holds the PIN hash. *The access mode cannot be changed later.*
+  3. **Connect to Project** → **Redeploy** (env vars only reach new deployments).
+
+The read-write token checkbox is optional: inside Vercel Functions the SDK
+authenticates with OIDC using `BLOB_STORE_ID`, which connecting adds for you. Tick it
+only if you want to run against the real store from your own machine.
 
 Creating the store does not switch Kids mode on for anyone. Kids mode is per browser
 and starts off; the store only makes the choice stick.
-
-Vercel Blob serves files from public URLs, so nothing readable is stored at a
-guessable address: the path is an HMAC of the household id keyed by the Blob token,
-and the PIN is peppered with the same secret before hashing. The token stays on the
-server.
 
 Without the token in production the lock falls back to being per-request only, so
 create the store before relying on it.
