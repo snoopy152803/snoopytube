@@ -75,7 +75,7 @@ async function syncKids(){
     const r = await fetch("/api/kids", { credentials: "same-origin" });
     const j = await r.json();
     if(state.kids !== j.on){ state.kids = j.on; save(); render(); }
-    state.kidsHasPin = j.hasPin;
+    state.kidsHasPin = j.hasPin; state.kidsDurable = j.durable !== false;
   }catch(e){}                 // offline or no API (file:// ) — fall back to the local flag
 }
 // Re-check now and then: flipping state.kids in the console would otherwise unfilter
@@ -94,7 +94,7 @@ async function setKids(on, pin){
   });
   const j = await r.json().catch(() => ({}));
   if(!r.ok) throw new Error(j.error || "Couldn't reach the server");
-  state.kids = j.on; state.kidsHasPin = j.hasPin; save();
+  state.kids = j.on; state.kidsHasPin = j.hasPin; state.kidsDurable = j.durable !== false; save();
   return j;
 }
 
@@ -114,6 +114,7 @@ function openKidsDialog(){
       <label class="check"><input type="checkbox" id="kidsStrict" ${state.kidsStrict ? "checked" : ""}>
         Only videos their creator marked <b>“Made for kids”</b></label>
       <p class="note strictnote">Very restrictive: most channels don't use that label (it switches off their comments), so this hides nearly everything except young-children content. Needs YouTube connected.</p>
+      ${state.kidsDurable === false ? `<p class="note warn"><b>This site can't lock Kids mode yet.</b> The setting won't stick reliably until a Blob store is connected in Vercel (see SETUP.md). It will still filter — it just can't be relied on to stay on.</p>` : ""}
       <div class="err" id="kidsErr"></div>
       <div class="dlgbtns"><button class="pill" data-closedialog>Cancel</button><button class="pill primary" id="kidsOn">Turn on</button></div></div>`;
   d.classList.add("open");

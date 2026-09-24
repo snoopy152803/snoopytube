@@ -63,19 +63,23 @@ module.exports = async function handler(req, res){
   const hh = household(req, res);
   const rec = (await store.get(keyFor(hh))) || { on: false, pinHash: null, salt: null };
 
-  if(req.method !== "POST") return res.end(JSON.stringify({ on: !!rec.on, hasPin: !!rec.pinHash }));
+  // "durable" says whether this state actually survives across serverless instances.
+  // On Vercel without a Blob store it does not, and the UI needs to say so rather
+  // than imply a lock that isn't there.
+  const durable = store.usingBlob() || !process.env.VERCEL;
+  if(req.method !== "POST") return res.end(JSON.stringify({ on: !!rec.on, hasPin: !!rec.pinHash, durable }));
 
   const { action, pin } = await body(req);
   if(action === "on"){
     const salt = crypto.randomBytes(16).toString("hex");
     const next = pin ? { on: true, salt, pinHash: hash(pin, salt) } : { on: true, salt: null, pinHash: null };
     await store.set(keyFor(hh), next);
-    return res.end(JSON.stringify({ on: true, hasPin: !!next.pinHash }));
+    return res.end(JSON.stringify({ on: true, hasPin: !!next.pinHash, durable }));
   }
   if(action === "off"){
     if(!verify(rec, pin)){ res.statusCode = 403; return res.end(JSON.stringify({ error: "Wrong PIN", on: true, hasPin: true })); }
     await store.set(keyFor(hh), { on: false, pinHash: null, salt: null });
-    return res.end(JSON.stringify({ on: false, hasPin: false }));
+    return res.end(JSON.stringify({ on: false, hasPin: false, durable }));
   }
   res.statusCode = 400; res.end(JSON.stringify({ error: "bad action" }));
 };
