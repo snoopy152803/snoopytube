@@ -68,6 +68,24 @@ module.exports = async function handler(req, res){
   // On Vercel without a Blob store it does not, and the UI needs to say so rather
   // than imply a lock that isn't there.
   const durable = store.usingBlob() || !process.env.VERCEL;
+
+  // ?diag=1 — which storage the function actually has. Reports only whether each
+  // variable is present, never its value, so it's safe to call from anywhere.
+  if(new URL(req.url, "http://x").searchParams.get("diag")){
+    return res.end(JSON.stringify({
+      durable,
+      store: store.usingBlob() ? "blob" : "temp file (not shared between instances)",
+      env: {
+        VERCEL: !!process.env.VERCEL,
+        VERCEL_ENV: process.env.VERCEL_ENV || null,
+        BLOB_STORE_ID: !!process.env.BLOB_STORE_ID,
+        BLOB_READ_WRITE_TOKEN: !!process.env.BLOB_READ_WRITE_TOKEN,
+        VERCEL_OIDC_TOKEN: !!process.env.VERCEL_OIDC_TOKEN,
+        BLOB_WEBHOOK_PUBLIC_KEY: !!process.env.BLOB_WEBHOOK_PUBLIC_KEY,
+        blobPrefixed: Object.keys(process.env).filter(k => k.includes("BLOB")).sort(),
+      },
+    }));
+  }
   if(req.method !== "POST") return res.end(JSON.stringify({ on: !!rec.on, hasPin: !!rec.pinHash, durable }));
 
   const { action, pin } = await body(req);
