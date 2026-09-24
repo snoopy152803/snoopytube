@@ -28,6 +28,7 @@ window.addEventListener("hashchange",render);
 
 /* ---------- ADD VIDEO DIALOG ---------- */
 function openAddDialog(){
+  if(catalogueOnly()) return toast("Adding videos is off while Kids mode is set to built-in videos only");
   const d=document.getElementById("dialog"); d.innerHTML=addDialogHtml(); d.classList.add("open");
   setTimeout(()=>document.getElementById("addLink").focus(),50);
 }

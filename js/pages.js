@@ -105,12 +105,13 @@ function pageSearch(q){
     if(matched<ql.length) return null;                        // every search word must match somewhere
     const sc=scoreVideo(v,p); return {v,s:m*2+sc.s*0.1,why:sc.why};
   }).filter(Boolean).sort((a,b)=>b.s-a.s);
-  // 2. Live results from YouTube itself, filled in by fillYouTubeResults() once /api/search answers
-  setTimeout(()=>fillYouTubeResults(q),0);
+  // 2. Live results from YouTube — unless Kids mode is set to built-in videos only
+  if(!catalogueOnly()) setTimeout(()=>fillYouTubeResults(q),0);
   return `<div class="page"><h1 class="pagetitle">Results for “${esc(q)}”</h1>
   ${res.length?`<div class="list">${res.map(r=>listCard(r)).join("")}</div>`:""}
-  <h2 class="ytheading"><span class="ytlogo">▶</span> From YouTube</h2>
-  <div class="list" id="ytResults"><div class="searching">${ICONS.spark} Snoopy is sniffing around YouTube for “${esc(q)}”…</div></div></div>`;
+  ${catalogueOnly() ? `<p class="note" style="max-width:1100px">🧸 Kids mode is set to built-in videos only, so SnoopyTube isn't searching YouTube.${res.length?"":" Nothing here matched — try another word."}</p>`
+    : `<h2 class="ytheading"><span class="ytlogo">▶</span> From YouTube</h2>
+  <div class="list" id="ytResults"><div class="searching">${ICONS.spark} Snoopy is sniffing around YouTube for “${esc(q)}”…</div></div>`}</div>`;
 }
 async function fillYouTubeResults(q){
   const box=document.getElementById("ytResults"); if(!box) return;
@@ -190,9 +191,9 @@ function watchRow(v){
     </div>`;
 }
 function upNext(v){
-  setTimeout(()=>fillUpNext(v),0);
-  return `<h3>Up next</h3><div id="upnextLocal">${similar(v,8).map(sideCard).join("")}</div>
-    <div id="upnextYt"><div class="searching small">${ICONS.spark} Finding related videos on YouTube…</div></div>`;
+  if(!catalogueOnly()) setTimeout(()=>fillUpNext(v),0);
+  return `<h3>Up next</h3><div id="upnextLocal">${similar(v, catalogueOnly()?20:8).map(sideCard).join("")}</div>
+    ${catalogueOnly() ? "" : `<div id="upnextYt"><div class="searching small">${ICONS.spark} Finding related videos on YouTube…</div></div>`}`;
 }
 // Ask YouTube for videos like this one: the channel name plus a couple of title words.
 // Works for any video, including ones that came from search and have no catalogue neighbours.

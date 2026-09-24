@@ -7,7 +7,7 @@
 // directly (CORS).
 
 const MAX_RESULTS = 20;
-const { kidsOnFor } = require("./kids.js");
+const { kidsStateFor } = require("./kids.js");
 const { blockedWord } = require("./_kidwords.js");
 
 async function searchYouTube(query, kids){
@@ -73,9 +73,13 @@ function parseViews(s){
 module.exports = async function handler(req, res){
   const params = new URL(req.url, "http://x").searchParams;
   const q = params.get("q") || "";
-  // The page can ask for Kids mode, but if the household has it locked on the server
+  // The page can ask for Kids mode, but if the household has it locked the server
   // says so regardless — that's what stops it being turned off in devtools.
-  const kids = params.get("kids") === "1" || await kidsOnFor(req);
+  const locked = await kidsStateFor(req);
+  const kids = params.get("kids") === "1" || locked.on;
+  // Catalogue-only: refuse to search YouTube at all for this household. Enforced
+  // here so it holds even if the page is edited.
+  if(locked.catalogueOnly) return res.end(JSON.stringify({ videos: [], catalogueOnly: true }));
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "s-maxage=600, stale-while-revalidate=3600");
   res.setHeader("Vary", "Accept");   // Vercel caches each query for 10 min

@@ -44,11 +44,11 @@ function verify(rec, pin){
 }
 
 // Used by api/search.js so the filter can't be skipped by the page.
-async function kidsOnFor(req){
+async function kidsStateFor(req){
   const hh = parseCookies(req)[COOKIE];
-  if(!hh) return false;
+  if(!hh) return { on: false, catalogueOnly: false };
   const rec = await store.get(keyFor(hh));
-  return !!(rec && rec.on);
+  return { on: !!(rec && rec.on), catalogueOnly: !!(rec && rec.on && rec.catalogueOnly) };
 }
 
 function body(req){
@@ -62,7 +62,7 @@ module.exports = async function handler(req, res){
   res.setHeader("Content-Type", "application/json");
   res.setHeader("Cache-Control", "no-store");
   const hh = household(req, res);
-  const rec = (await store.get(keyFor(hh))) || { on: false, pinHash: null, salt: null };
+  const rec = (await store.get(keyFor(hh))) || { on: false, pinHash: null, salt: null, catalogueOnly: false };
 
   // "durable" says whether this state actually survives across serverless instances.
   // On Vercel without a Blob store it does not, and the UI needs to say so rather
@@ -86,20 +86,21 @@ module.exports = async function handler(req, res){
       },
     }));
   }
-  if(req.method !== "POST") return res.end(JSON.stringify({ on: !!rec.on, hasPin: !!rec.pinHash, durable }));
+  if(req.method !== "POST") return res.end(JSON.stringify({ on: !!rec.on, hasPin: !!rec.pinHash, catalogueOnly: !!rec.catalogueOnly, durable }));
 
-  const { action, pin } = await body(req);
+  const { action, pin, catalogueOnly } = await body(req);
   if(action === "on"){
     const salt = crypto.randomBytes(16).toString("hex");
-    const next = pin ? { on: true, salt, pinHash: hash(pin, salt) } : { on: true, salt: null, pinHash: null };
+    const next = { on: true, catalogueOnly: !!catalogueOnly,
+                   ...(pin ? { salt, pinHash: hash(pin, salt) } : { salt: null, pinHash: null }) };
     await store.set(keyFor(hh), next);
-    return res.end(JSON.stringify({ on: true, hasPin: !!next.pinHash, durable }));
+    return res.end(JSON.stringify({ on: true, hasPin: !!next.pinHash, catalogueOnly: next.catalogueOnly, durable }));
   }
   if(action === "off"){
     if(!verify(rec, pin)){ res.statusCode = 403; return res.end(JSON.stringify({ error: "Wrong PIN", on: true, hasPin: true })); }
-    await store.set(keyFor(hh), { on: false, pinHash: null, salt: null });
-    return res.end(JSON.stringify({ on: false, hasPin: false, durable }));
+    await store.set(keyFor(hh), { on: false, pinHash: null, salt: null, catalogueOnly: false });
+    return res.end(JSON.stringify({ on: false, hasPin: false, catalogueOnly: false, durable }));
   }
   res.statusCode = 400; res.end(JSON.stringify({ error: "bad action" }));
 };
-module.exports.kidsOnFor = kidsOnFor;
+module.exports.kidsStateFor = kidsStateFor;

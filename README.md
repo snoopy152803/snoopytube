@@ -41,6 +41,11 @@ Top of the sidebar. Four layers:
 4. Optionally, only videos the creator labelled "Made for kids" (YouTube Data API,
    needs YouTube connected). Very restrictive — most channels never use that label.
 
+There's also **built-in videos only**, which switches off live YouTube search
+entirely: search, "Up next" and adding videos by link all stay inside the ~274
+hand-checked videos. It's the one airtight setting, because nothing is fetched from
+YouTube at all. The server refuses to search for that household either way.
+
 The on/off state lives on the server behind an HttpOnly cookie and a PIN, so it can't
 be switched off from the console. See SETUP.md for the Blob store and for what the
 lock does and doesn't cover.

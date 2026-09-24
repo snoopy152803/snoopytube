@@ -55,6 +55,7 @@ function resetAll(){
    returns the video links, like copying them by hand. Results join the catalogue
    for this session; keepVideo() saves the ones you watch or like permanently. */
 async function searchYouTubeLive(q){
+  if(catalogueOnly()) return [];                    // Kids mode: never reach out to YouTube
   const r=await fetch("/api/search?q="+encodeURIComponent(q)+(kidsOn()?"&kids=1":""));
   const data=await r.json().catch(()=>({error:"search API not running (it needs Vercel or `node dev.js`)"}));
   if(!r.ok||data.error) throw new Error(data.error||"HTTP "+r.status);
@@ -90,6 +91,7 @@ function guessTags(title,cat){
   return [...new Set([cat.toLowerCase(),...words.slice(0,5)])];
 }
 async function addCustomVideo(link,cat){
+  if(catalogueOnly()) throw new Error("Adding videos is switched off while Kids mode is set to built-in videos only");
   const id=parseYouTubeId(link);
   if(!id) throw new Error("That doesn't look like a YouTube link");
   if(byId[id]) return byId[id];                     // already in the catalogue

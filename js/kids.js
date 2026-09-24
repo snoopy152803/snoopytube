@@ -31,6 +31,9 @@ function blockedWord(w){
 }
 
 const kidsOn = () => !!state.kids;
+// Kids mode with live YouTube search switched off entirely — only the built-in,
+// hand-checked catalogue is reachable. Enforced by the server too (api/search.js).
+const catalogueOnly = () => !!(state.kids && state.kidsCatalogueOnly);
 const kidsStrict = () => !!(state.kids && state.kidsStrict);
 
 /* ---------- layer 4: the creator's "Made for kids" label ----------
@@ -83,6 +86,7 @@ async function syncKids(){
     const j = await r.json();
     if(state.kids !== j.on){ state.kids = j.on; save(); render(); }
     state.kidsHasPin = j.hasPin; state.kidsDurable = j.durable !== false;
+    if(state.kidsCatalogueOnly !== !!j.catalogueOnly){ state.kidsCatalogueOnly = !!j.catalogueOnly; save(); render(); }
   }catch(e){}                 // offline or no API (file:// ) — fall back to the local flag
 }
 // Re-check now and then: flipping state.kids in the console would otherwise unfilter
@@ -93,15 +97,15 @@ function watchKids(){
   document.addEventListener("visibilitychange", () => { if(!document.hidden) syncKids(); });
 }
 
-async function setKids(on, pin){
+async function setKids(on, pin, opts = {}){
   const r = await fetch("/api/kids", {
     method: "POST", credentials: "same-origin",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ action: on ? "on" : "off", pin: pin || "" }),
+    body: JSON.stringify({ action: on ? "on" : "off", pin: pin || "", catalogueOnly: !!opts.catalogueOnly }),
   });
   const j = await r.json().catch(() => ({}));
   if(!r.ok) throw new Error(j.error || "Couldn't reach the server");
-  state.kids = j.on; state.kidsHasPin = j.hasPin; state.kidsDurable = j.durable !== false; save();
+  state.kids = j.on; state.kidsHasPin = j.hasPin; state.kidsCatalogueOnly = !!j.catalogueOnly; state.kidsDurable = j.durable !== false; save();
   return j;
 }
 
@@ -118,6 +122,9 @@ function openKidsDialog(){
       <p>Runs every search through YouTube's Restricted Mode, limits categories to kid-friendly ones, and hides videos whose titles suggest scary or grown-up content.</p>
       <label>PIN to turn it back off
         <input id="kidsPin" type="password" inputmode="numeric" maxlength="8" placeholder="4–8 digits — leave blank for none" autocomplete="off"></label>
+      <label class="check"><input type="checkbox" id="kidsCat" ${state.kidsCatalogueOnly ? "checked" : ""}>
+        <span>Don't search YouTube at all — only the ${VIDEOS.filter(v => !v.fromSearch).length} videos built into SnoopyTube</span></label>
+      <p class="note strictnote">The only airtight setting: nothing unexpected can appear, because nothing is fetched from YouTube. Search and “Up next” stay inside the built-in list, and adding videos by link is switched off.</p>
       <label class="check"><input type="checkbox" id="kidsStrict" ${state.kidsStrict ? "checked" : ""}>
         Only videos their creator marked <b>“Made for kids”</b></label>
       <p class="note strictnote">Very restrictive: most channels don't use that label (it switches off their comments), so this hides nearly everything except young-children content. Needs YouTube connected.</p>
@@ -134,8 +141,9 @@ async function enableKids(){
   const pin = (document.getElementById("kidsPin")?.value || "").trim();
   if(pin && !/^\d{4,8}$/.test(pin)) return kidsErr("PIN must be 4–8 digits");
   state.kidsStrict = !!document.getElementById("kidsStrict")?.checked;
+  const catOnly = !!document.getElementById("kidsCat")?.checked;
   try{
-    await setKids(true, pin);
+    await setKids(true, pin, { catalogueOnly: catOnly });
     closeDialog(); toast("Kids mode on — Snoopy will keep things friendly 🧸"); render();
   }catch(e){ kidsErr(e.message); }
 }

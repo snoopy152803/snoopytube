@@ -81,6 +81,16 @@ and starts off; the store only makes the choice stick.
 Without the token in production the lock falls back to being per-request only, so
 create the store before relying on it.
 
+### Built-in videos only
+
+The strongest setting. Word filters reduce what gets through but can't eliminate it —
+a search for "horror movie kills" still surfaced titles like "Michael Myers not so
+heartless after all?" that contain no blocked word. Switching to built-in videos only
+removes that whole class of problem: `api/search.js` returns nothing for the
+household, so no YouTube result can reach the page regardless of what it asks for.
+
+The trade is real: no live search, and no adding videos by link.
+
 ### How strong is the lock?
 
 Strong enough that it can't be switched off from devtools, by editing localStorage,
