@@ -23,6 +23,13 @@ const KID_BLOCKWORDS = (
   +   "hell nihilism corpse violent violence creepypasta jumpscare grusome gruesome mutilated "
   +   "decapitated").split(" ");
 
+// Prefix matches, so "kill" also catches killer / killing / killed. Only stems that
+// are unambiguous as prefixes go here — "die" would match "diet", for instance.
+const KID_BLOCKSTEMS = ["kill", "murder", "horror", "gore", "gory", "zombie", "torture", "decapitat", "mutilat", "stab", "slaughter", "behead", "massacre", "corpse", "suicid", "strangl", "brutal", "gruesome", "creepy", "haunt", "demon", "possess", "satan", "nightmar", "terrif", "disturb", "violen", "bloody"];
+function blockedWord(w){
+  return KID_BLOCKWORDS.includes(w) || KID_BLOCKSTEMS.some(st => w.startsWith(st));
+}
+
 const kidsOn = () => !!state.kids;
 const kidsStrict = () => !!(state.kids && state.kidsStrict);
 
@@ -61,7 +68,7 @@ function kidsAllows(v){
   if(!kidsOn()) return true;
   if(v.cat !== "YouTube" && !KID_CATEGORIES.includes(v.cat)) return false;
   const words = (v.title + " " + (v.tags || []).join(" ")).toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/);
-  if(words.some(w => KID_BLOCKWORDS.includes(w))) return false;
+  if(words.some(blockedWord)) return false;
   return madeForKidsOk(v);
 }
 

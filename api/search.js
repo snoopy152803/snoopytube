@@ -8,7 +8,7 @@
 
 const MAX_RESULTS = 20;
 const { kidsOnFor } = require("./kids.js");
-const KID_BLOCKWORDS = require("./_kidwords.js");
+const { blockedWord } = require("./_kidwords.js");
 
 async function searchYouTube(query, kids){
   const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query) + "&sp=EgIQAQ%253D%253D"; // sp = "videos only"
@@ -40,7 +40,7 @@ async function searchYouTube(query, kids){
 }
 
 function titleBlocked(title){
-  return String(title).toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).some(w => KID_BLOCKWORDS.includes(w));
+  return String(title).toLowerCase().replace(/[^a-z0-9\s]/g, " ").split(/\s+/).some(blockedWord);
 }
 
 // Recursively look through the JSON for {videoRenderer: {...}} objects.

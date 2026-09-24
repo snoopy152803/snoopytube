@@ -1,7 +1,7 @@
 // api/_kidwords.js — words that hide a video while Kids mode is on.
 // The server filters with this so the page can't skip it; js/kids.js keeps the same
 // list for the built-in catalogue. Keep the two in step when editing.
-module.exports = (
+const WORDS = (
   "kill kills killed killing death deaths dead die dies dying murder murders blood bloody gore "
   +   "gory horror scary terrifying disturbing nightmare creepy haunted haunting ghost ghosts "
   +   "demon demonic possessed zombie zombies slasher massacre stab stabbed knife machete chainsaw "
@@ -10,3 +10,11 @@ module.exports = (
   +   "cocktail drunk smoking cigarette sex sexy nude nsfw porn curse cursed swear swearing damn "
   +   "hell nihilism corpse violent violence creepypasta jumpscare grusome gruesome mutilated "
   +   "decapitated").split(" ");
+
+// Prefix matches, so "kill" also catches killer / killing / killed. Only stems that
+// are unambiguous as prefixes go here — "die" would match "diet", for instance.
+const STEMS = ["kill", "murder", "horror", "gore", "gory", "zombie", "torture", "decapitat", "mutilat", "stab", "slaughter", "behead", "massacre", "corpse", "suicid", "strangl", "brutal", "gruesome", "creepy", "haunt", "demon", "possess", "satan", "nightmar", "terrif", "disturb", "violen", "bloody"];
+function blockedWord(w){
+  return WORDS.includes(w) || STEMS.some(st => w.startsWith(st));
+}
+module.exports = { blockedWord };
