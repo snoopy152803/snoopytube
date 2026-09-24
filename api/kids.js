@@ -34,7 +34,9 @@ function household(req, res){
   return hh;
 }
 
-const hash = (pin, salt) => crypto.scryptSync(String(pin), salt, 32).toString("hex");
+// The PIN is peppered with the server-side secret before hashing, so a copy of the
+// stored record is useless to anyone who doesn't have it.
+const hash = (pin, salt) => crypto.scryptSync(store.hmac(pin), salt, 32).toString("hex");
 function verify(rec, pin){
   if(!rec || !rec.pinHash) return true;                 // no PIN set — anyone may turn it off
   if(!pin) return false;

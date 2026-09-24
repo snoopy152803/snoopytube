@@ -66,9 +66,18 @@ That state needs somewhere to live:
 
 * **Locally (`node dev.js`)** — a JSON file in your temp folder. Nothing to set up.
 * **On Vercel** — a Blob store:
-  1. Vercel dashboard → your project → **Storage** → **Create** → **Blob**
-  2. Connect it to the project. That sets `BLOB_READ_WRITE_TOKEN` automatically.
-  3. Redeploy.
+  1. Vercel dashboard → your project → **Storage** → **Create Database** → **Blob**
+  2. **Connect to Project**. That sets `BLOB_READ_WRITE_TOKEN` automatically —
+     you never copy a token by hand.
+  3. **Redeploy** (environment variables only reach new deployments).
+
+Creating the store does not switch Kids mode on for anyone. Kids mode is per browser
+and starts off; the store only makes the choice stick.
+
+Vercel Blob serves files from public URLs, so nothing readable is stored at a
+guessable address: the path is an HMAC of the household id keyed by the Blob token,
+and the PIN is peppered with the same secret before hashing. The token stays on the
+server.
 
 Without the token in production the lock falls back to being per-request only, so
 create the store before relying on it.
@@ -81,6 +90,9 @@ before. It is **not** device-level parental control:
 
 * Clearing cookies gives the browser a new household id, and a new household starts
   with Kids mode off.
+* `HttpOnly` stops page JavaScript reading the cookie, but DevTools → Application →
+  Cookies still shows it. That alone doesn't unlock anything — the PIN is checked on
+  the server — but don't think of the household id as a secret.
 * Nothing stops anyone opening youtube.com directly.
 
 For real enforcement use Screen Time / Family Link on the device, or lock YouTube

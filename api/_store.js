@@ -8,8 +8,14 @@
 //                    without a Blob store.
 //
 // Values are small JSON objects. Keys look like "kids/<household id>".
+//
+// Blobs are served from a public URL, so the stored path is NOT the household id —
+// it's an HMAC of it keyed by the Blob token. The token never leaves the server, so
+// reading the cookie (which DevTools will happily show you) doesn't tell you where
+// the blob lives. api/kids.js keys the PIN hash with the same secret, so even a
+// leaked blob can't be brute-forced.
 
-const fs = require("fs"), path = require("path");
+const fs = require("fs"), path = require("path"), crypto = require("crypto");
 
 const TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
 const BLOB_API = "https://blob.vercel-storage.com";
@@ -59,13 +65,20 @@ function publicUrlFor(key){
 }
 
 /* ---------- public interface ---------- */
+// Secret shared by every instance: the Blob token itself. Stable, server-only,
+// and already present whenever Blob is configured.
+const secret = () => TOKEN || "local-dev";
+const hmac = v => crypto.createHmac("sha256", secret()).update(String(v)).digest("hex");
+// "kids/abc" -> "kids/<hmac>" so the public path can't be derived from the cookie
+const blobPath = key => { const i = key.indexOf("/"); return i < 0 ? hmac(key) : key.slice(0, i + 1) + hmac(key.slice(i + 1)); };
+
 async function get(key){
   if(!usingBlob()) return readFile()[key] || null;
-  try{ return await blobGet(key); }catch(e){ return null; }
+  try{ return await blobGet(blobPath(key)); }catch(e){ return null; }
 }
 async function set(key, value){
   if(!usingBlob()){ const all = readFile(); all[key] = value; writeFile(all); return; }
-  await blobPut(key, value);
+  await blobPut(blobPath(key), value);
 }
 
-module.exports = { get, set, usingBlob };
+module.exports = { get, set, usingBlob, hmac };
