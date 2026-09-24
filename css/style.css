@@ -22,6 +22,7 @@ header{position:fixed;top:0;left:0;right:0;height:var(--header);background:var(-
 .iconbtn{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
 .iconbtn:hover{background:var(--bg3)}
 .iconbtn svg{width:24px;height:24px;fill:currentColor}
+.searchtoggle{display:none}
 .logo{display:flex;align-items:center;gap:6px;font-family:var(--hand);font-size:22px;line-height:1;padding-top:4px}
 .logo svg{width:32px;height:32px;margin-top:-4px}
 .logo em{font-style:normal;color:var(--red)}
@@ -170,11 +171,72 @@ h1.pagetitle{font-family:var(--hand);font-size:26px;font-weight:400;padding:24px
 .pagehead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
 @media (max-width:1300px){.wside{width:340px}}
 @media (max-width:1000px){.watch{flex-direction:column}.wside{width:100%}}
+/* ---------- phones & tablets ----------
+   The sidebar becomes a slide-in drawer (it used to be display:none, which left
+   History, Trending and Subscriptions unreachable), plus a bottom tab bar for the
+   places people go most. Safe-area insets keep it clear of the iPhone home bar. */
+.scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:39}
+.tabbar{display:none}
 @media (max-width:800px){
-  nav{display:none}body.mini nav{display:none}main{margin-left:0!important}
-  .hcenter{margin:0 8px}.lcard .thumb{width:160px}.lcard .ctitle{font-size:14px}
+  :root{--header:52px}
+  body.drawer{overflow:hidden}
+  nav{display:block;width:270px;transform:translateX(-100%);transition:transform .22s ease;
+      box-shadow:2px 0 16px rgba(0,0,0,.5);padding-bottom:24px}
+  body.drawer nav{transform:none}
+  body.drawer .scrim{display:block}
+  body.mini nav{width:270px;padding:12px}
+  body.mini .navitem{flex-direction:row;gap:24px;height:40px;justify-content:flex-start;font-size:14px;padding:0 12px}
+  body.mini .navtitle,body.mini .navsub,body.mini .taste,body.mini .navsec.hidemini{display:revert}
+  body.mini .navsec{border-bottom:1px solid var(--line);margin-bottom:12px;padding-bottom:12px}
+  main{margin-left:0!important;padding-bottom:calc(60px + env(safe-area-inset-bottom))}
+
+  header{padding:0 8px;gap:4px}
+  .hleft{gap:4px}
+  .logo span{font-size:19px}
+  /* search collapses to an icon; tapping it takes over the header */
+  .hcenter{display:none}
+  .searchtoggle{display:flex}
+  body.searching .hcenter{display:flex;position:absolute;left:8px;right:8px;margin:0;max-width:none;z-index:2}
+  body.searching .hleft,body.searching .hright{visibility:hidden}
+  .search input{font-size:16px;padding:0 12px}      /* 16px stops iOS zooming on focus */
+  .search button{width:48px}
+  .addbtn span,#authBox .pill span{display:none}
+  .addbtn,#authBox .pill{padding:0 10px}
+  .iconbtn[title="Notifications"]{display:none}
+
   .page{padding:0 12px 40px}
-  .addbtn span{display:none}.addbtn{padding:0 8px}
+  .grid{grid-template-columns:1fr;gap:24px 0;padding-top:8px}
+  .thumb{border-radius:0;margin:0 -12px;width:calc(100% + 24px)}
+  .cbody{padding:0}
+  .lcard{flex-direction:column;gap:8px}
+  .lcard .thumb{width:calc(100% + 24px)}
+  .lcard .ctitle{font-size:15px;padding-right:32px}
+  .lcard .desc{display:none}
+  .watch{padding:0 0 24px}
+  .player{border-radius:0}
+  .wtitle,.wrow,.desc,.wside{padding-left:12px;padding-right:12px}
+  .wside{width:100%}
+  .wacts{width:100%}
+  .scard .thumb{width:150px}
+  .dialog{max-height:85vh;overflow-y:auto}
+
+  /* bottom tab bar */
+  .tabbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:38;background:var(--bg);
+          border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+  .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:7px 0 6px;font-size:10px;color:var(--text2)}
+  .tabbar a.active{color:var(--text)}
+  .tabbar svg{width:23px;height:23px;fill:currentColor}
+}
+@media (max-width:800px) and (display-mode:standalone){
+  header{padding-top:env(safe-area-inset-top);height:calc(var(--header) + env(safe-area-inset-top))}
+  main{margin-top:calc(var(--header) + env(safe-area-inset-top))}
+}
+/* bigger touch targets on anything without a mouse */
+@media (hover:none){
+  .more{opacity:1}
+  .menu div{padding:13px 16px}
+  .navitem{height:46px}
+  .chip{height:36px;padding:0 14px}
 }
 
 /* ---------- add-video dialog & search fallback ---------- */
@@ -222,3 +284,5 @@ h1.pagetitle{font-family:var(--hand);font-size:26px;font-weight:400;padding:24px
 .pill.reconnect{background:#3a2a10;color:var(--yellow);border:1px solid #6b5220;height:36px}
 .pill.reconnect:hover{background:#4a3614}
 @media (max-width:800px){.pill.reconnect span{display:none}.pill.reconnect{padding:0 8px}}
+.navitem.kidson{color:var(--yellow)}
+.dialog label{display:block;margin-bottom:4px}

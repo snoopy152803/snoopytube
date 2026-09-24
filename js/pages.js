@@ -32,9 +32,19 @@ function renderNav(){
   </div>
   <div class="navsec hidemini">
     ${item("#/added",ICONS.plus,"Added by you")}
+    <a class="navitem${state.kids?" kidson":""}" href="#" data-kids><span style="width:24px;text-align:center">🧸</span><span>Kids mode${state.kids?" · on":""}</span></a>
     <a class="navitem" href="#/reset" id="resetBtn">${ICONS.reset}<span>Reset SnoopyTube</span></a>
     <div class="navsub">SnoopyTube plays real YouTube videos through YouTube's own player. Your history never leaves this browser.</div>
   </div>`;
+}
+// Bottom tab bar (phones only — see the media query in style.css).
+function renderTabBar(){
+  const el=document.getElementById("tabbar"); if(!el) return;
+  const here=(location.hash||"#/").split("?")[0];
+  const tab=(href,icon,label)=>`<a class="${here===href?"active":""}" href="${href}">${icon}<span>${label}</span></a>`;
+  el.innerHTML=tab("#/",ICONS.home,"Home")+tab("#/trending",ICONS.trending,"Trending")
+    +tab("#/subscriptions",ICONS.subs,"Subs")+tab("#/history",ICONS.history,"History")
+    +`<a href="#" data-openmenu>${ICONS.more}<span>More</span></a>`;
 }
 const catEmoji=c=>({"Minecraft PvP":"⚔️",Chess:"♟️",YouTube:"▶️",Education:"🎓",Science:"🔬",Coding:"💻",Gaming:"🎮",Entertainment:"🎪",Movies:"🎬",Comedy:"😂",Cooking:"🍳",Fitness:"💪",Nature:"🌿",Space:"🚀"}[c]||"📺");
 
@@ -80,7 +90,7 @@ function pageHome(cat){
   return `<div class="page">${html}</div>`;
 }
 function pageTrending(cat){
-  const list=VIDEOS.filter(v=>cat==="All"||v.cat===cat).sort((a,b)=>b.views-a.views);
+  const list=VIDEOS.filter(v=>kidsAllows(v)&&(cat==="All"||v.cat===cat)).sort((a,b)=>b.views-a.views);
   return `<div class="page">${chips(cat,"#/trending")}<h1 class="pagetitle">🔥 Trending in the neighbourhood</h1><div class="grid">${list.slice(0,PAGE_SIZE).map(v=>card({v})).join("")}</div>${loadMore(list.slice(PAGE_SIZE).map(v=>({v})))}</div>`;
 }
 function pageSearch(q){
@@ -88,7 +98,7 @@ function pageSearch(q){
   // 1. Instant results from videos SnoopyTube already knows (catalogue + ones you've saved)
   const words=str=>str.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(Boolean);
   const hit=(list,w)=>list.some(x=>x===w||(w.length>=4&&x.startsWith(w)));   // whole words (or a 4+ letter prefix), not substrings
-  const res=VIDEOS.filter(v=>!(v.fromSearch&&!v.custom)).map(v=>{
+  const res=VIDEOS.filter(v=>kidsAllows(v)&&!(v.fromSearch&&!v.custom)).map(v=>{
     const t=words(v.title), c=words(v.ch), g=[...v.tags,v.cat.toLowerCase()];
     let m=0, matched=0;
     ql.forEach(w=>{ if(hit(t,w)){m+=3;matched++;} else if(hit(c,w)){m+=2;matched++;} else if(hit(g,w)){m+=1;matched++;} });

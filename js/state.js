@@ -3,7 +3,7 @@
 
 /* ---------- STATE ---------- */
 const KEY="snoopytube.state.v1";
-const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],mini:false};
+const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],mini:false,kids:false,kidsPin:null};
 let state={...EMPTY};
 try{
   // "mytube.state.v1" is the old name from before the Snoopy makeover — keep that data.
@@ -47,7 +47,7 @@ function notInterested(id){
 function clearHistory(){ state.history=[]; save(); toast("Watch history cleared"); render(); }
 function resetAll(){
   if(!confirm("Reset all watch history, likes, subscriptions and added videos?")) return;
-  state={...EMPTY,mini:state.mini}; save(); toast("SnoopyTube has been reset"); render();
+  state={...EMPTY,mini:state.mini,kids:state.kids,kidsPin:state.kidsPin}; save(); toast("SnoopyTube has been reset"); render();
 }
 
 /* ---------- SEARCHING YOUTUBE ----------
@@ -55,10 +55,10 @@ function resetAll(){
    returns the video links, like copying them by hand. Results join the catalogue
    for this session; keepVideo() saves the ones you watch or like permanently. */
 async function searchYouTubeLive(q){
-  const r=await fetch("/api/search?q="+encodeURIComponent(q));
+  const r=await fetch("/api/search?q="+encodeURIComponent(q)+(kidsOn()?"&kids=1":""));
   const data=await r.json().catch(()=>({error:"search API not running (it needs Vercel or `node dev.js`)"}));
   if(!r.ok||data.error) throw new Error(data.error||"HTTP "+r.status);
-  return data.videos.map(v=>{
+  return data.videos.filter(v=>kidsAllows({...v,cat:"YouTube",tags:[]})).map(v=>{
     if(byId[v.id]) return byId[v.id];
     if(v.avatar&&!CHANNEL_AVATARS[v.ch]) CHANNEL_AVATARS[v.ch]=v.avatar;
     const full={...v,cat:"YouTube",tags:guessTags(v.title,"YouTube"),fromSearch:true};

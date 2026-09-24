@@ -30,6 +30,25 @@ A YouTube-style site where Snoopy learns what you like and fetches videos for yo
 - Recommendations are computed in your browser from what you watch, like, dislike and
   subscribe to. Everything is stored in `localStorage`; nothing leaves your machine.
 
+## Kids mode
+
+Turn it on from the sidebar. It layers three filters:
+
+1. Every YouTube search is sent with the `YouTube-Restrict: Strict` header, so
+   YouTube applies its own Restricted Mode to the results
+2. Only categories listed in `KID_CATEGORIES` (`js/kids.js`) can appear
+3. Titles and tags are checked against a word list
+
+Optionally set a 4-digit PIN to turn it back off. It is a filter, not a guarantee,
+and the PIN is stored in the browser — it is a speed bump, not parental control.
+
+## Mobile
+
+Works on phones: the sidebar becomes a slide-in drawer, there's a bottom tab bar,
+search collapses to an icon, thumbnails go full-bleed, and safe-area insets keep
+things clear of the iPhone home bar. Installable to the home screen via
+`manifest.webmanifest`.
+
 ## No ads, no tracking
 
 SnoopyTube shows no ads of its own and collects nothing — your history and

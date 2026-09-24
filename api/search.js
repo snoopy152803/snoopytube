@@ -8,13 +8,17 @@
 
 const MAX_RESULTS = 20;
 
-async function searchYouTube(query){
+async function searchYouTube(query, kids){
   const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query) + "&sp=EgIQAQ%253D%253D"; // sp = "videos only"
+  // "YouTube-Restrict: Strict" is the header YouTube documents for restricting
+  // content on a network, so in Kids mode YouTube filters the results itself
+  // rather than us guessing from titles.
   const html = await (await fetch(url, {
     headers: {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
       "Accept-Language": "en-US,en;q=0.9",
       "Cookie": "CONSENT=YES+1; SOCS=CAI",   // skips the EU cookie-consent page
+      ...(kids ? { "YouTube-Restrict": "Strict" } : {}),
     },
   })).text();
 
@@ -57,12 +61,14 @@ function parseViews(s){
 
 // Plain Node http handler — works on Vercel and in dev.js.
 module.exports = async function handler(req, res){
-  const q = new URL(req.url, "http://x").searchParams.get("q") || "";
+  const params = new URL(req.url, "http://x").searchParams;
+  const q = params.get("q") || "", kids = params.get("kids") === "1";
   res.setHeader("Content-Type", "application/json");
-  res.setHeader("Cache-Control", "s-maxage=600, stale-while-revalidate=3600");   // Vercel caches each query for 10 min
+  res.setHeader("Cache-Control", "s-maxage=600, stale-while-revalidate=3600");
+  res.setHeader("Vary", "Accept");   // Vercel caches each query for 10 min
   if(!q.trim()){ res.statusCode = 400; return res.end(JSON.stringify({error: "missing q"})); }
   try{
-    res.end(JSON.stringify({videos: await searchYouTube(q)}));
+    res.end(JSON.stringify({videos: await searchYouTube(q, kids)}));
   }catch(e){
     res.statusCode = 502; res.end(JSON.stringify({error: e.message}));
   }

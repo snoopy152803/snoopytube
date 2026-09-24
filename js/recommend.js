@@ -63,7 +63,7 @@ function diversify(list,block=20,perChannel=3,perCategory=8){
 
 function recommend({exclude=[],cat="All",limit=Infinity,includeWatched=false}={}){
   const p=buildProfile(); const ex=new Set(exclude);
-  const ranked=VIDEOS.filter(v=>!ex.has(v.id) && !(v.fromSearch&&!v.custom) && (cat==="All"||v.cat===cat) && (includeWatched||!p.watched.has(v.id)) && !state.notInterested.includes(v.id))
+  const ranked=VIDEOS.filter(v=>!ex.has(v.id) && kidsAllows(v) && !(v.fromSearch&&!v.custom) && (cat==="All"||v.cat===cat) && (includeWatched||!p.watched.has(v.id)) && !state.notInterested.includes(v.id))
     .map(v=>({v,...scoreVideo(v,p)})).sort((a,b)=>b.s-a.s);
   return diversify(ranked, 20, 3, cat==="All"?8:20).slice(0,limit);
 }
@@ -73,7 +73,7 @@ function recommend({exclude=[],cat="All",limit=Infinity,includeWatched=false}={}
 // small tie-breaker, so a Hello video won't get chess next to it.
 function similar(seed,limit=20){
   const p=buildProfile(); const st=new Set(seed.tags.filter(t=>t!=="youtube"));
-  return VIDEOS.filter(v=>v.id!==seed.id && !(v.fromSearch&&!v.custom) && !state.notInterested.includes(v.id)).map(v=>{
+  return VIDEOS.filter(v=>v.id!==seed.id && kidsAllows(v) && !(v.fromSearch&&!v.custom) && !state.notInterested.includes(v.id)).map(v=>{
     const overlap=v.tags.filter(t=>st.has(t)).length, sameCh=v.ch===seed.ch;
     if(!overlap && !sameCh) return null;
     let s=overlap*1.6 + (sameCh?2.2:0) + (v.cat===seed.cat?0.7:0) + scoreVideo(v,p).s*0.15;
