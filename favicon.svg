@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <title>SnoopyTube</title>
+  <circle cx="32" cy="32" r="32" fill="#f5c518"/>
+  <g transform="translate(32,33) scale(0.88) translate(-32,-32)">
+    <g stroke="#111" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round">
+      <path fill="#fff" d="M10 30 C10 17, 20 10, 30 11 C37 12, 42 16, 43 22
+        C47 21, 53 23, 57 26.5 C60 29, 59 34, 55 35.5 C50 37.5, 45 36.5, 42 34.5
+        C41 41, 35 46, 28 46 C17 46, 10 40, 10 30 Z"/>
+      <path fill="#111" stroke="none" d="M21 15 C15 19, 13.5 29, 15.5 37
+        C16.5 42, 22.5 42, 23 36.5 C24 28, 24.5 19.5, 21 15 Z"/>
+      <ellipse cx="52.5" cy="30" rx="4.6" ry="4" fill="#111" stroke="none"/>
+      <ellipse cx="35" cy="21" rx="1.9" ry="2.7" fill="#111" stroke="none"/>
+      <path fill="none" stroke-width="2" d="M45 37.5 C41.5 41, 37 40.5, 35 38"/>
+    </g>
+    <path fill="none" stroke="#d9251c" stroke-width="3.2" stroke-linecap="round" d="M19 44 C24 48.5, 32 48.5, 37.5 43.5"/>
+  </g>
+</svg>

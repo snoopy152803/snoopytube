@@ -23,7 +23,7 @@ header{position:fixed;top:0;left:0;right:0;height:var(--header);background:var(-
 .iconbtn:hover{background:var(--bg3)}
 .iconbtn svg{width:24px;height:24px;fill:currentColor}
 .logo{display:flex;align-items:center;gap:6px;font-family:var(--hand);font-size:22px;line-height:1;padding-top:4px}
-.logo svg{width:34px;height:34px;margin-top:-5px}
+.logo svg{width:32px;height:32px;margin-top:-4px}
 .logo em{font-style:normal;color:var(--red)}
 .hcenter{display:flex;align-items:center;flex:1;max-width:640px;margin:0 40px}
 .search{display:flex;flex:1;height:40px}
