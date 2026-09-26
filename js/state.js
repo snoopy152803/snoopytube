@@ -3,7 +3,13 @@
 
 /* ---------- STATE ---------- */
 const KEY="snoopytube.state.v1";
-const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],mini:false,kids:false,kidsStrict:false};
+// Anything added here appears automatically for people who already have saved state,
+// because the spread below fills in the keys their copy is missing.
+const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],mini:false,
+  kids:false,kidsStrict:false,
+  theme:"dark",          // "dark" | "light" | "system"  (Settings page)
+  urlStyle:"medium",     // "short" | "medium" | "long"  (js/urls.js)
+  mutedTags:[]};         // topics you've told Woodstock to drop
 let state={...EMPTY};
 try{
   // "mytube.state.v1" is the old name from before the Snoopy makeover — keep that data.
@@ -44,10 +50,25 @@ function notInterested(id){
   if(!state.notInterested.includes(id)) state.notInterested.push(id); save();
   toast("Okay, Snoopy will show you fewer videos like this");
 }
+/* Muting a topic is stronger than "not interested": videos tagged with it are dropped
+   outright, even from a channel you subscribe to. See notMuted() in recommend.js. */
+function muteTag(tag){
+  const t=String(tag||"").trim().toLowerCase(); if(!t) return;
+  if(!state.mutedTags.some(x=>tagKey(x)===tagKey(t))) state.mutedTags.push(t);
+  save(); toast("Muted “"+t+"” — Snoopy won't bring you those any more");
+}
+function unmuteTag(tag){
+  state.mutedTags=state.mutedTags.filter(x=>tagKey(x)!==tagKey(tag)); save();
+  toast("Unmuted “"+tag+"”");
+}
 function clearHistory(){ state.history=[]; save(); toast("Watch history cleared"); render(); }
 function resetAll(){
   if(!confirm("Reset all watch history, likes, subscriptions and added videos?")) return;
-  state={...EMPTY,mini:state.mini,kids:state.kids,kidsStrict:state.kidsStrict}; save(); toast("SnoopyTube has been reset"); render();
+  // Settings aren't "your data" in the sense this button means — a reset shouldn't put
+  // the site back into dark mode or unlock Kids mode.
+  state={...EMPTY,mini:state.mini,kids:state.kids,kidsStrict:state.kidsStrict,
+         theme:state.theme,urlStyle:state.urlStyle,mutedTags:state.mutedTags};
+  save(); toast("SnoopyTube has been reset"); render();
 }
 
 /* ---------- SEARCHING YOUTUBE ----------

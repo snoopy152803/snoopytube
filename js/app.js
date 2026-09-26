@@ -9,7 +9,7 @@ function render(){
   const main=document.getElementById("main");
   let html="";
   if(seg.length===0) html=pageHome(cat);
-  else if(seg[0]==="watch") html=pageWatch(seg[1]);
+  else if(seg[0]==="watch") html=pageWatch(videoIdFromHash()||seg[1]);   // extra path pieces are decoration (js/urls.js)
   else if(seg[0]==="search") html=pageSearch(decodeURIComponent(seg.slice(1).join("/")||""));
   else if(seg[0]==="trending") html=pageTrending(cat);
   else if(seg[0]==="history") html=pageHistory();
@@ -17,6 +17,7 @@ function render(){
   else if(seg[0]==="subscriptions") html=pageSubs();
   else if(seg[0]==="added") html=pageAdded();
   else if(seg[0]==="channel") html=pageChannel(decodeURIComponent(seg[1]||""));
+  else if(seg[0]==="settings") html=pageSettings();
   else if(seg[0]==="reset"){ resetAll(); location.hash="#/"; return; }
   else html=pageHome("All");
   main.innerHTML=html; renderNav(); renderTabBar(); closeDrawer();
@@ -38,7 +39,7 @@ async function submitAddDialog(){
   err.textContent=""; go.disabled=true; go.textContent="Fetching…";
   try{
     const v=await addCustomVideo(link,cat);
-    closeDialog(); toast("Added “"+v.title.slice(0,40)+(v.title.length>40?"…":"")+"”"); location.hash="#/watch/"+v.id; render();
+    closeDialog(); toast("Added “"+v.title.slice(0,40)+(v.title.length>40?"…":"")+"”"); location.hash=videoHref(v); render();
   }catch(e){ err.textContent=e.message; go.disabled=false; go.textContent="Add to SnoopyTube"; }
 }
 
@@ -86,16 +87,17 @@ document.addEventListener("click",e=>{
   if(act){
     const id=act.dataset.id, a=act.dataset.act;
     if(a==="like"){ toggleLike(id); onWatchPage()?refreshWatch(id):render(); }
+    else if(a==="mute"){ muteTag(act.dataset.tag); onWatchPage()?refreshUpNext(videoIdFromHash()):render(); }
     else if(a==="share") shareVideo(id);
     else if(a==="dl") downloadVideo(id,act.dataset.fmt);
     else if(a==="yt") window.open("https://www.youtube.com/watch?v="+id,"_blank","noopener");
-    else if(a==="ni"){ notInterested(id); onWatchPage()?refreshUpNext(location.hash.split("/")[2]):render(); }
+    else if(a==="ni"){ notInterested(id); onWatchPage()?refreshUpNext(videoIdFromHash()):render(); }
     return;
   }
   if(e.target.closest("[data-stop]")) return;              // channel link inside a card
-  const c=e.target.closest(".card"); if(c){ location.hash="#/watch/"+c.dataset.id; return; }
+  const c=e.target.closest(".card"); if(c){ e.preventDefault(); location.hash=watchHref(c.dataset.id); return; }
   // On the watch page these only redraw the controls row, so the video keeps playing.
-  const cur=()=>location.hash.split("/")[2];
+  const cur=()=>videoIdFromHash();
   const sub=e.target.closest("[data-sub]"); if(sub){ toggleSub(sub.dataset.sub); onWatchPage()?refreshWatch(cur()):render(); return; }
   const like=e.target.closest("[data-like]"); if(like){ toggleLike(like.dataset.like); onWatchPage()?refreshWatch(cur()):render(); return; }
   const dis=e.target.closest("[data-dislike]"); if(dis){ toggleDislike(dis.dataset.dislike); onWatchPage()?refreshWatch(cur()):render(); return; }
@@ -109,6 +111,8 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-kids]")){ e.preventDefault(); closeDrawer(); openKidsDialog(); return; }
   if(e.target.closest("#kidsOn")){ enableKids(); return; }
   if(e.target.closest("#kidsOff")){ disableKids(); return; }
+  if(e.target.closest("#installBtn")){ runInstall(); return; }
+  const unmute=e.target.closest("[data-unmute]"); if(unmute){ unmuteTag(unmute.dataset.unmute); render(); return; }
   if(e.target.closest("[data-addvideo]")){ openAddDialog(); return; }
   if(e.target.closest("[data-closedialog]")||e.target.id==="dialog"){ closeDialog(); return; }
   if(e.target.closest("#loadMore")){ appendMore(); return; }
@@ -116,12 +120,22 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#resetBtn")){ e.preventDefault(); resetAll(); return; }
 });
 let toastT; function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2600); }
-document.addEventListener("submit",e=>{ if(e.target.id==="addForm"){ e.preventDefault(); submitAddDialog(); } });
+document.addEventListener("submit",e=>{
+  if(e.target.id==="addForm"){ e.preventDefault(); submitAddDialog(); }
+  if(e.target.id==="muteForm"){ e.preventDefault(); submitMute(); }
+});
+// Settings radios (see js/settings.js).
+document.addEventListener("change",e=>{
+  const g=e.target.closest("[data-set]"); if(!g) return;
+  if(g.dataset.set==="theme") setTheme(e.target.value);
+  if(g.dataset.set==="url") setUrlStyle(e.target.value);
+});
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeDialog(); closeDrawer(); } });
 
 /* ---------- START ---------- */
 mergeCustomVideos(state.custom);   // videos you added from YouTube links
 buildIndex();
+applyTheme();                      // before the first paint, so there's no flash
 render();
 initAuth();
 syncKids(); watchKids();   // the server has the final say on Kids mode

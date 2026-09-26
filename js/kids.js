@@ -112,13 +112,13 @@ async function setKids(on, pin, opts = {}){
 /* ---------- dialogs ---------- */
 function openKidsDialog(){
   const d = document.getElementById("dialog");
-  d.innerHTML = kidsOn() ? `<div class="dialog"><h2>🧸 Turn off Kids mode</h2>
+  d.innerHTML = kidsOn() ? `<div class="dialog"><h2>${ICONS.kids} Turn off Kids mode</h2>
       ${state.kidsHasPin ? `<p>Enter the PIN to turn Kids mode off.</p>
         <input id="kidsPin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN" autocomplete="off">`
         : `<p>Kids mode is on, without a PIN. Turn it off?</p>`}
       <div class="err" id="kidsErr"></div>
       <div class="dlgbtns"><button class="pill" data-closedialog>Keep it on</button><button class="pill primary" id="kidsOff">Turn off</button></div></div>`
-    : `<div class="dialog"><h2>🧸 Kids mode</h2>
+    : `<div class="dialog"><h2>${ICONS.kids} Kids mode</h2>
       <p>Runs every search through YouTube's Restricted Mode, limits categories to kid-friendly ones, and hides videos whose titles suggest scary or grown-up content.</p>
       <label>PIN to turn it back off
         <input id="kidsPin" type="password" inputmode="numeric" maxlength="8" placeholder="4–8 digits — leave blank for none" autocomplete="off"></label>
@@ -144,7 +144,7 @@ async function enableKids(){
   const catOnly = !!document.getElementById("kidsCat")?.checked;
   try{
     await setKids(true, pin, { catalogueOnly: catOnly });
-    closeDialog(); toast("Kids mode on — Snoopy will keep things friendly 🧸"); render();
+    closeDialog(); toast("Kids mode on — Snoopy will keep things friendly"); render();
   }catch(e){ kidsErr(e.message); }
 }
 async function disableKids(){

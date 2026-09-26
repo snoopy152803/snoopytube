@@ -54,8 +54,22 @@ lock does and doesn't cover.
 
 Works on phones: the sidebar becomes a slide-in drawer, there's a bottom tab bar,
 search collapses to an icon, thumbnails go full-bleed, and safe-area insets keep
-things clear of the iPhone home bar. Installable to the home screen via
-`manifest.webmanifest`.
+things clear of the iPhone home bar. Installable to the home screen — or to the desktop as its own app — via
+`manifest.json` and `sw.js`; see "Desktop app" below.
+
+## Desktop app
+
+SnoopyTube installs as a real app with its own window and its own icon — no Electron,
+no download. `manifest.json` describes the app and `sw.js` is a small service worker
+that keeps a copy of the shell so the app still opens on a bad connection.
+
+* **Chrome / Edge** — an **Install app** button appears in the header. (There's also
+  the install icon in the address bar, or ⋮ → Cast, save and share → Install page as app.)
+* **Safari on macOS** — File → Add to Dock.
+* **iPhone / Android** — Share → Add to Home Screen.
+
+The service worker never caches `/api/*`, so Kids mode is still decided by the server
+on every single call — an installed app can't be used to serve a stale "off".
 
 ## No ads, no tracking
 
@@ -80,7 +94,11 @@ embedded player, so YouTube's own ads still appear on videos that have them.
 | `js/recommend.js` | The recommendation engine — the brain |
 | `js/components.js` | Card, thumbnail, chip and icon HTML builders |
 | `js/pages.js` | Sidebar nav and every page |
+| `js/urls.js` | Readable video links (Short / Medium / Long) |
+| `js/settings.js` | The Settings page: light/dark, link length, muted topics |
+| `js/install.js` | Registers `sw.js` and shows the "Install app" button |
 | `js/app.js` | Hash router, click handling, dialog, startup |
+| `manifest.json`, `sw.js` | What makes it installable as a desktop app |
 
 ## Running it
 

@@ -3,7 +3,8 @@
 // the same way Vercel does in production. Downloads only work here, locally.
 const http = require("http"), fs = require("fs"), path = require("path");
 const search = require("./api/search.js"), download = require("./api/download.js"), kids = require("./api/kids.js");
-const TYPES = {".html":"text/html", ".css":"text/css", ".js":"text/javascript", ".json":"application/json", ".png":"image/png", ".svg":"image/svg+xml"};
+const TYPES = {".html":"text/html", ".css":"text/css", ".js":"text/javascript", ".json":"application/json", ".png":"image/png", ".svg":"image/svg+xml",
+  ".webmanifest":"application/manifest+json", ".ico":"image/x-icon", ".jpg":"image/jpeg", ".webp":"image/webp"};
 
 http.createServer((req, res) => {
   const url = new URL(req.url, "http://localhost");

@@ -4,10 +4,9 @@
 function renderNav(){
   const route=location.hash||"#/";
   const item=(href,icon,label)=>`<a class="navitem ${route.split("?")[0]===href?"active":""}" href="${href}">${icon}<span>${label}</span></a>`;
-  const tags=topTags(6); const maxW=tags.length?tags[0][1]:1;
+
   document.getElementById("nav").innerHTML=`
   <div class="navsec">
-    <a class="navitem kidsitem${state.kids?" kidson":""}" href="#" data-kids><span class="kidsicon">🧸</span><span>Kids mode</span>${state.kids?`<span class="kidsbadge">ON</span>`:""}</a>
     ${item("#/",ICONS.home,"Home")}
     ${item("#/trending",ICONS.trending,"Trending")}
     ${item("#/subscriptions",ICONS.subs,"Subscriptions")}
@@ -17,15 +16,14 @@ function renderNav(){
     ${item("#/history",ICONS.history,"History")}
     ${item("#/liked",ICONS.liked,"Liked videos")}
   </div>
-  <div class="navsec hidemini">
-    <div class="navtitle">Snoopy's notes on you</div>
-    ${tags.length?`<div class="taste">${tags.map(([t,w])=>`<div class="tag"><span style="width:82px;overflow:hidden;text-overflow:ellipsis">${esc(t)}</span><div class="bar"><i style="width:${Math.round(w/maxW*100)}%"></i></div></div>`).join("")}</div>
-    <div class="navsub">Woodstock has taken notes on ${state.history.length} watch${state.history.length===1?"":"es"} and ${state.liked.length} like${state.liked.length===1?"":"s"}.</div>`
-    :`<div class="navsub">Nothing in the doghouse yet. Watch a few videos and Snoopy will start fetching things you'll like.</div>`}
-  </div>
+  ${tasteChart()}
   <div class="navsec hidemini">
     <div class="navtitle">Subscriptions</div>
-    ${state.subs.length?state.subs.map(ch=>`<a class="navitem" href="#/channel/${encodeURIComponent(ch)}">${avatar(ch)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(ch)}</span></a>`).join(""):`<div class="navsub">Subscribe to a channel from a video page and it'll show up here.</div>`}
+    ${state.subs.length?state.subs.map(ch=>`<a class="navitem" href="#/channel/${encodeURIComponent(ch)}">${avatar(ch,"",false)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(ch)}</span></a>`).join(""):`<div class="navsub">Subscribe to a channel from a video page and it'll show up here.</div>`}
+  </div>
+  <div class="navsec">
+    <a class="navitem kidsitem${state.kids?" kidson":""}" href="#" data-kids>${ICONS.kids}<span>Kids mode</span>${state.kids?`<span class="kidsbadge">ON</span>`:""}</a>
+    ${item("#/settings",ICONS.settings,"Settings")}
   </div>
   <div class="navsec hidemini">
     <div class="navtitle">Explore</div>
@@ -35,6 +33,21 @@ function renderNav(){
     ${item("#/added",ICONS.plus,"Added by you")}
     <a class="navitem" href="#/reset" id="resetBtn">${ICONS.reset}<span>Reset SnoopyTube</span></a>
     <div class="navsub">SnoopyTube plays real YouTube videos through YouTube's own player. Your history never leaves this browser.</div>
+  </div>`;
+}
+// "Snoopy's notes on you" — your top interests with the share of Woodstock's notes
+// each one accounts for. Hidden entirely in Kids mode: the chart is a readout of
+// somebody's viewing habits, and it isn't a child's business (or a child's lever).
+function tasteChart(){
+  if(kidsOn()) return "";
+  const {list,other}=tasteShares(6);
+  const pct=n=>n>=9.5?Math.round(n)+"%":n.toFixed(1)+"%";     // one decimal for the small slices
+  return `<div class="navsec hidemini">
+    <div class="navtitle">Snoopy's notes on you</div>
+    ${list.length?`<div class="taste">${list.map(x=>`<div class="tag"><span class="tname">${esc(tagLabel(x.t))}</span><div class="bar"><i style="width:${Math.round(x.bar)}%"></i></div><span class="tpct">${pct(x.pct)}</span></div>`).join("")}</div>
+    ${other>0.5?`<div class="navsub">The other ${pct(other)} is spread across everything else you've watched.</div>`:""}
+    <div class="navsub">Woodstock has taken notes on ${state.history.length} watch${state.history.length===1?"":"es"} and ${state.liked.length} like${state.liked.length===1?"":"s"}.</div>`
+    :`<div class="navsub">Nothing in the doghouse yet. Watch a few videos and Snoopy will start fetching things you'll like.</div>`}
   </div>`;
 }
 // Bottom tab bar (phones only — see the media query in style.css).
@@ -109,7 +122,7 @@ function pageSearch(q){
   if(!catalogueOnly()) setTimeout(()=>fillYouTubeResults(q),0);
   return `<div class="page"><h1 class="pagetitle">Results for “${esc(q)}”</h1>
   ${res.length?`<div class="list">${res.map(r=>listCard(r)).join("")}</div>`:""}
-  ${catalogueOnly() ? `<p class="note" style="max-width:1100px">🧸 Kids mode is set to built-in videos only, so SnoopyTube isn't searching YouTube.${res.length?"":" Nothing here matched — try another word."}</p>`
+  ${catalogueOnly() ? `<p class="note" style="max-width:1100px">Kids mode is set to built-in videos only, so SnoopyTube isn't searching YouTube.${res.length?"":" Nothing here matched — try another word."}</p>`
     : `<h2 class="ytheading"><span class="ytlogo">▶</span> From YouTube</h2>
   <div class="list" id="ytResults"><div class="searching">${ICONS.spark} Snoopy is sniffing around YouTube for “${esc(q)}”…</div></div>`}</div>`;
 }
@@ -150,7 +163,7 @@ function pageChannel(ch){
   const list=VIDEOS.filter(v=>v.ch===ch); if(!list.length) return `<div class="page"><div class="empty"><h2>Channel not found</h2></div></div>`;
   const total=list.reduce((a,v)=>a+v.views,0); const subbed=state.subs.includes(ch);
   return `<div class="page"><div style="display:flex;align-items:center;gap:24px;padding:32px 0 16px;border-bottom:1px solid var(--line);margin-bottom:8px">
-    ${avatar(ch)}<style>.page>div>.avatar{width:128px;height:128px;font-size:48px}</style>
+    ${avatar(ch,"",false)}<style>.page>div>.avatar{width:128px;height:128px;font-size:48px}</style>
     <div><h1 style="font-size:32px;font-weight:700">${esc(ch)}</h1><div class="cmeta">${fmtViews(total)} total views • ${list.length} video${list.length===1?"":"s"}</div>
     <button class="pill ${subbed?"subbed":"primary"}" data-sub="${esc(ch)}" style="margin-top:12px">${subbed?"Subscribed ✓":"Subscribe"}</button></div>
   </div><div class="grid">${list.map(v=>card({v})).join("")}</div></div>`;
@@ -164,7 +177,8 @@ function pageWatch(id){
     <div class="wrow" id="wrow">${watchRow(v)}</div>
     <div class="desc" id="descBox">
       <div class="stats">${v.views?fmtViews(v.views)+" views • ":""}${esc(v.age)}</div>
-      <div class="tags">${v.tags.map(t=>`<a href="#/search/${encodeURIComponent(t)}">#${esc(t)}</a>`).join("")}</div>
+      <div class="tags">${v.tags.map(t=>`<span class="tagpair"><a href="#/search/${encodeURIComponent(t)}">#${esc(t)}</a>
+        <button class="tagmute" data-act="mute" data-tag="${esc(t)}" title="Mute “${esc(t)}” — Snoopy will stop recommending it">×</button></span>`).join("")}</div>
       <div class="txt">${esc(v.title)} — from ${esc(v.ch)}.
 
 This video is embedded from YouTube. If it says "Video unavailable" the uploader has disabled embedding — use the Watch on YouTube button above.
@@ -202,7 +216,7 @@ async function fillUpNext(v){
   const words=v.title.toLowerCase().replace(/[^a-z0-9\s]/g," ").split(/\s+/).filter(w=>w.length>3&&!STOPWORDS.has(w)).slice(0,3);
   try{
     const list=await searchYouTubeLive(v.ch+" "+words.join(" "));
-    if(!document.getElementById("upnextYt")||location.hash!=="#/watch/"+v.id) return;
+    if(!document.getElementById("upnextYt")||!onVideo(v.id)) return;
     const shown=new Set([v.id,...[...document.querySelectorAll("#upnextLocal .card")].map(c=>c.dataset.id)]);
     const fresh=list.filter(x=>!shown.has(x.id)&&!state.notInterested.includes(x.id)).slice(0,12);
     box.innerHTML=fresh.map(x=>sideCard({v:x,why:x.ch===v.ch?{t:"More from "+x.ch,k:"ch"}:{t:"Related on YouTube",k:"tag"}})).join("");
