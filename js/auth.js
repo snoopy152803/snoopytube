@@ -173,15 +173,15 @@ function syncFail(e){
   toast("Couldn't sync to YouTube: " + e.message);
   // These two are fixed in the Google Cloud console — open the help dialog so the
   // links are one click away instead of buried in a toast.
-  if(e.reason === "insufficientPermissions" || e.reason === "expired") setTimeout(openYouTubeHelp, 600);
+  if(e.reason === "insufficientPermissions" && !everConnected()) setTimeout(openYouTubeHelp, 600);
 }
 
 // Called when a sync is wanted but the token has run out: keep the action, ask once.
 function needsReconnect(action){
   if(!auth.user || !everConnected()) return;      // never connected — don't nag
   pendingSync = action;
-  toast("Your YouTube session ran out — reconnect to sync that");
-  renderAuthButton(); setTimeout(openYouTubeHelp, 500);
+  toast("Your YouTube session ran out — hit Reconnect and Snoopy will finish that off");
+  renderAuthButton();
 }
 function flushPending(){
   const a = pendingSync; pendingSync = null;
@@ -243,12 +243,14 @@ function renderAuthButton(){
     return;
   }
   const pic = auth.user.photoURL ? `<img src="${esc(auth.user.photoURL)}" alt="" referrerpolicy="no-referrer">` : esc((auth.user.displayName || "?")[0]);
-  const reconnect = (!auth.token && everConnected()) ? `<button class="pill reconnect" data-ythelp title="Your YouTube session ran out">${ICONS.yt}<span>Reconnect</span></button>` : "";
+  const reconnect = (!auth.token && everConnected()) ? `<button class="pill reconnect" data-connectyt title="Your YouTube session ran out">${ICONS.yt}<span>Reconnect</span></button>` : "";
   box.innerHTML = reconnect + `<div class="wmore"><button class="avatar authavatar ${auth.token ? "" : "stale"}" data-menu="auth" title="${esc(auth.user.displayName || "")}">${pic}</button>
     <div class="menu" id="menu-auth">
       <div class="menuinfo"><b>${esc(auth.user.displayName || "")}</b><br><small>${esc(auth.user.email || "")}</small></div>
       <div class="menuinfo ${auth.token ? "ok" : "warn"}">${auth.token ? "✓ Likes & subscriptions sync to YouTube" : "⚠ Not connected to YouTube — likes stay on SnoopyTube"}</div>
-      ${auth.token ? "" : `<div data-ythelp>${ICONS.yt}Connect YouTube</div>`}
+      ${auth.token ? "" : (everConnected()
+        ? `<div data-connectyt>${ICONS.yt}Reconnect YouTube</div>`
+        : `<div data-ythelp>${ICONS.yt}Connect YouTube</div>`)}
       <div data-signout>${ICONS.block}Sign out</div>
     </div></div>`;
 }

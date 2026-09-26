@@ -55,9 +55,14 @@ function sideCard(r){
     ${whyChip(r.why)}
   </div>${menuHtml(v)}</div>`;
 }
+// Category chips, ordered by how much you actually watch each one. "All" stays
+// first; categories you've never watched keep their original order at the end.
 function chips(active,base){
   const cats=kidsOn()?CATS.filter(c=>c==="All"||KID_CATEGORIES.includes(c)):CATS;
-  return `<div class="chips">${cats.map(c=>`<a class="chip ${c===active?"active":""}" href="${base}${c==="All"?"":"?cat="+encodeURIComponent(c)}">${c}</a>`).join("")}</div>`;
+  const p=buildProfile();
+  const weight=c=>c==="All"?Infinity:(p.tags["cat:"+c]||0);
+  const ordered=[...cats].sort((a,b)=>weight(b)-weight(a));          // stable: ties keep catalogue order
+  return `<div class="chips">${ordered.map(c=>`<a class="chip ${c===active?"active":""}" href="${base}${c==="All"?"":"?cat="+encodeURIComponent(c)}">${c}</a>`).join("")}</div>`;
 }
 const ICONS={
   google:'<svg viewBox="0 0 24 24"><path fill="#4285F4" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v3.9h5.4c-.2 1.2-.9 2.3-2 3v2.5h3.2c1.9-1.7 3-4.3 3-7.4z"/><path fill="#34A853" d="M12 22c2.7 0 5-.9 6.6-2.4l-3.2-2.5c-.9.6-2 1-3.4 1-2.6 0-4.8-1.8-5.6-4.1H3.1v2.6C4.8 19.8 8.1 22 12 22z"/><path fill="#FBBC05" d="M6.4 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.4H3.1C2.4 8.8 2 10.4 2 12s.4 3.2 1.1 4.6L6.4 14z"/><path fill="#EA4335" d="M12 5.9c1.5 0 2.8.5 3.8 1.5l2.9-2.9C17 2.9 14.7 2 12 2 8.1 2 4.8 4.2 3.1 7.4L6.4 10c.8-2.3 3-4.1 5.6-4.1z"/></svg>',
