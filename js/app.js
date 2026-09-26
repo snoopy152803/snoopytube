@@ -130,6 +130,11 @@ document.addEventListener("change",e=>{
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeDialog(); closeDrawer(); } });
 
 /* ---------- START ---------- */
+// Links shared before SnoopyTube dropped the "#" look like /#/watch/abc. The router
+// reads the path now, so those would land on the home page — translate them once, and
+// replace the history entry so Back doesn't bounce between the two forms.
+if(/^#\/./.test(location.hash)) history.replaceState(null,"",location.hash.slice(1));
+
 mergeCustomVideos(state.custom);   // videos you added from YouTube links
 buildIndex();
 applyTheme();                      // before the first paint, so there's no flash
