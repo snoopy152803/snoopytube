@@ -2,36 +2,36 @@
 
 /* ---------- NAV ---------- */
 function renderNav(){
-  const route=location.hash||"#/";
-  const item=(href,icon,label)=>`<a class="navitem ${route.split("?")[0]===href?"active":""}" href="${href}">${icon}<span>${label}</span></a>`;
+  const route=routePath();
+  const item=(href,icon,label)=>`<a class="navitem ${route===href?"active":""}" href="${href}">${icon}<span>${label}</span></a>`;
 
   document.getElementById("nav").innerHTML=`
   <div class="navsec">
-    ${item("#/",ICONS.home,"Home")}
-    ${item("#/trending",ICONS.trending,"Trending")}
-    ${item("#/subscriptions",ICONS.subs,"Subscriptions")}
+    ${item("/",ICONS.home,"Home")}
+    ${item("/trending",ICONS.trending,"Trending")}
+    ${item("/subscriptions",ICONS.subs,"Subscriptions")}
   </div>
   <div class="navsec">
     <div class="navtitle">You</div>
-    ${item("#/history",ICONS.history,"History")}
-    ${item("#/liked",ICONS.liked,"Liked videos")}
+    ${item("/history",ICONS.history,"History")}
+    ${item("/liked",ICONS.liked,"Liked videos")}
   </div>
   ${tasteChart()}
   <div class="navsec hidemini">
     <div class="navtitle">Subscriptions</div>
-    ${state.subs.length?state.subs.map(ch=>`<a class="navitem" href="#/channel/${encodeURIComponent(ch)}">${avatar(ch,"",false)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(ch)}</span></a>`).join(""):`<div class="navsub">Subscribe to a channel from a video page and it'll show up here.</div>`}
+    ${state.subs.length?state.subs.map(ch=>`<a class="navitem" href="/channel/${encodeURIComponent(ch)}">${avatar(ch,"",false)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(ch)}</span></a>`).join(""):`<div class="navsub">Subscribe to a channel from a video page and it'll show up here.</div>`}
   </div>
   <div class="navsec">
     <a class="navitem kidsitem${state.kids?" kidson":""}" href="#" data-kids>${ICONS.kids}<span>Kids mode</span>${state.kids?`<span class="kidsbadge">ON</span>`:""}</a>
-    ${item("#/settings",ICONS.settings,"Settings")}
+    ${item("/settings",ICONS.settings,"Settings")}
   </div>
   <div class="navsec hidemini">
     <div class="navtitle">Explore</div>
-    ${CATS.slice(1).map(c=>`<a class="navitem" href="#/?cat=${encodeURIComponent(c)}"><span style="width:24px;text-align:center">${catEmoji(c)}</span><span>${c}</span></a>`).join("")}
+    ${CATS.slice(1).map(c=>`<a class="navitem" href="/?cat=${encodeURIComponent(c)}"><span style="width:24px;text-align:center">${catEmoji(c)}</span><span>${c}</span></a>`).join("")}
   </div>
   <div class="navsec hidemini">
-    ${item("#/added",ICONS.plus,"Added by you")}
-    <a class="navitem" href="#/reset" id="resetBtn">${ICONS.reset}<span>Reset SnoopyTube</span></a>
+    ${item("/added",ICONS.plus,"Added by you")}
+    <a class="navitem" href="/reset" id="resetBtn">${ICONS.reset}<span>Reset SnoopyTube</span></a>
     <div class="navsub">SnoopyTube plays real YouTube videos through YouTube's own player. Your history never leaves this browser.</div>
   </div>`;
 }
@@ -53,10 +53,10 @@ function tasteChart(){
 // Bottom tab bar (phones only — see the media query in style.css).
 function renderTabBar(){
   const el=document.getElementById("tabbar"); if(!el) return;
-  const here=(location.hash||"#/").split("?")[0];
+  const here=routePath();
   const tab=(href,icon,label)=>`<a class="${here===href?"active":""}" href="${href}">${icon}<span>${label}</span></a>`;
-  el.innerHTML=tab("#/",ICONS.home,"Home")+tab("#/trending",ICONS.trending,"Trending")
-    +tab("#/subscriptions",ICONS.subs,"Subs")+tab("#/history",ICONS.history,"History")
+  el.innerHTML=tab("/",ICONS.home,"Home")+tab("/trending",ICONS.trending,"Trending")
+    +tab("/subscriptions",ICONS.subs,"Subs")+tab("/history",ICONS.history,"History")
     +`<a href="#" data-openmenu>${ICONS.more}<span>More</span></a>`;
 }
 const catEmoji=c=>({"Minecraft PvP":"⚔️",Chess:"♟️",YouTube:"▶️",Education:"🎓",Science:"🔬",Coding:"💻",Gaming:"🎮",Entertainment:"🎪",Movies:"🎬",Comedy:"😂",Cooking:"🍳",Fitness:"💪",Nature:"🌿",Space:"🚀"}[c]||"📺");
@@ -83,7 +83,7 @@ function pageHome(cat){
   const p=buildProfile();
   const recs=recommend({cat});
   const last=state.history[0]&&byId[state.history[0].id];
-  let html=chips(cat,"#/");
+  let html=chips(cat,"/");
   if(!state.history.length){
     html+=`<div class="notice"><svg viewBox="0 0 24 24"><path d="M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z"/></svg><div><b>Welcome to SnoopyTube!</b> Right now you're seeing what's popular. Watch, like or subscribe to anything and Snoopy will start fetching videos you'll love. Search for anything and Snoopy fetches results straight from YouTube.</div></div>`;
   }
@@ -97,14 +97,14 @@ function pageHome(cat){
   html+=rest.slice(0,PAGE_SIZE-8).map(card).join("");
   if(state.history.length && cat==="All"){
     const again=state.history.slice(0,4).map(h=>byId[h.id]).filter(Boolean);
-    html+=`<div class="shelf again"><h2><span class="ic">${ICONS.history}</span>Watch again<small><a href="#/history">View all</a></small></h2><div class="row">${again.map(v=>card({v})).join("")}</div></div>`;
+    html+=`<div class="shelf again"><h2><span class="ic">${ICONS.history}</span>Watch again<small><a href="/history">View all</a></small></h2><div class="row">${again.map(v=>card({v})).join("")}</div></div>`;
   }
   html+=`</div>`+loadMore(recs.slice(PAGE_SIZE));
   return `<div class="page">${html}</div>`;
 }
 function pageTrending(cat){
   const list=VIDEOS.filter(v=>kidsAllows(v)&&(cat==="All"||v.cat===cat)).sort((a,b)=>b.views-a.views);
-  return `<div class="page">${chips(cat,"#/trending")}<h1 class="pagetitle">🔥 Trending in the neighbourhood</h1><div class="grid">${list.slice(0,PAGE_SIZE).map(v=>card({v})).join("")}</div>${loadMore(list.slice(PAGE_SIZE).map(v=>({v})))}</div>`;
+  return `<div class="page">${chips(cat,"/trending")}<h1 class="pagetitle">🔥 Trending in the neighbourhood</h1><div class="grid">${list.slice(0,PAGE_SIZE).map(v=>card({v})).join("")}</div>${loadMore(list.slice(PAGE_SIZE).map(v=>({v})))}</div>`;
 }
 function pageSearch(q){
   const p=buildProfile(); const ql=q.toLowerCase().split(/\s+/).filter(Boolean);
@@ -177,7 +177,7 @@ function pageWatch(id){
     <div class="wrow" id="wrow">${watchRow(v)}</div>
     <div class="desc" id="descBox">
       <div class="stats">${v.views?fmtViews(v.views)+" views • ":""}${esc(v.age)}</div>
-      <div class="tags">${v.tags.map(t=>`<span class="tagpair"><a href="#/search/${encodeURIComponent(t)}">#${esc(t)}</a>
+      <div class="tags">${v.tags.map(t=>`<span class="tagpair"><a href="/search/${encodeURIComponent(t)}">#${esc(t)}</a>
         <button class="tagmute" data-act="mute" data-tag="${esc(t)}" title="Mute “${esc(t)}” — Snoopy will stop recommending it">×</button></span>`).join("")}</div>
       <div class="txt">${esc(v.title)} — from ${esc(v.ch)}.
 
@@ -192,7 +192,7 @@ Category: ${v.cat}</div>
 // can redraw just this bit — re-rendering the whole page would restart the video.
 function watchRow(v){
   const id=v.id, liked=state.liked.includes(id), disliked=state.disliked.includes(id), subbed=state.subs.includes(v.ch);
-  return `<div class="wch">${avatar(v.ch)}<div><a class="name" href="#/channel/${encodeURIComponent(v.ch)}">${esc(v.ch)}</a><div class="subs">${fmtViews(Math.round((v.views||1e5)/40))} subscribers</div></div>
+  return `<div class="wch">${avatar(v.ch)}<div><a class="name" href="/channel/${encodeURIComponent(v.ch)}">${esc(v.ch)}</a><div class="subs">${fmtViews(Math.round((v.views||1e5)/40))} subscribers</div></div>
       <button class="pill ${subbed?"subbed":"primary"}" data-sub="${esc(v.ch)}" style="margin-left:12px">${subbed?"Subscribed ✓":"Subscribe"}</button></div>
     <div class="wacts">
       <div class="likegroup">
@@ -227,7 +227,7 @@ function refreshWatch(id){
   row.innerHTML=watchRow(v); renderNav();
 }
 function refreshUpNext(id){ const v=byId[id], side=document.getElementById("wside"); if(v&&side) side.innerHTML=upNext(v); }
-const onWatchPage=()=>location.hash.startsWith("#/watch/");
+const onWatchPage=()=>routePath().startsWith("/watch/");
 const timeAgo=t=>{const d=Date.now()-t,m=Math.floor(d/6e4),h=Math.floor(m/60),dd=Math.floor(h/24);return dd>0?`${dd} day${dd>1?"s":""} ago`:h>0?`${h} hour${h>1?"s":""} ago`:m>0?`${m} min ago`:"just now"};
 
 /* ---------- ADD VIDEO DIALOG ---------- */

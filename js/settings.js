@@ -1,4 +1,4 @@
-// settings.js — The Settings page (#/settings) and the light/dark theme.
+// settings.js — The Settings page (/settings) and the light/dark theme.
 //
 // Everything here is saved in this browser only, like the rest of your state. Kids
 // mode is the exception: it lives on the server (api/kids.js), so this page just
@@ -29,7 +29,7 @@ window.matchMedia("(prefers-color-scheme: light)").addEventListener?.("change", 
 
 function setUrlStyle(s){
   state.urlStyle = s; save();
-  const id = videoIdFromHash();
+  const id = videoId();
   if(id) history.replaceState(null, "", watchHref(id));    // relabel the link you're on
   toast("Links are now " + s); render();
 }
@@ -90,7 +90,7 @@ function pageSettings(){
       <p class="setintro">Your history, likes, subscriptions and settings are saved in this browser and nowhere else. Woodstock has ${state.history.length} watch${state.history.length === 1 ? "" : "es"} and ${state.liked.length} like${state.liked.length === 1 ? "" : "s"} noted down${state.kids ? "" : `, across ${tasteShares(6).topics} topic${tasteShares(6).topics === 1 ? "" : "s"}`}.</p>
       <div class="setbtns">
         <button class="btn" id="clearHist">${ICONS.reset}Clear watch history</button>
-        <a class="btn" href="#/reset" id="resetBtn">${ICONS.reset}Reset everything</a>
+        <a class="btn" href="/reset" id="resetBtn">${ICONS.reset}Reset everything</a>
       </div>
     </section>
   </div>`;

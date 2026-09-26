@@ -57,6 +57,30 @@ search collapses to an icon, thumbnails go full-bleed, and safe-area insets keep
 things clear of the iPhone home bar. Installable to the home screen — or to the desktop as its own app — via
 `manifest.json` and `sw.js`; see "Desktop app" below.
 
+## URLs
+
+Pages have real paths — `/watch/TemLSMDKSMw/The-BEST-Beginner-Chess-Opening/GothamChess`,
+not `/#/watch/...`. Only the video id is read; everything after it is decoration, so old
+and shared links keep working whatever length they were made at. Choose Short, Medium or
+Long in Settings.
+
+This works because the server hands back `index.html` for any path it doesn't recognise
+(`vercel.json` in production, the fallback in `dev.js` locally) and the page routes itself
+with `history.pushState`. One consequence: opening `index.html` straight off disk no longer
+works — use `node dev.js`.
+
+## Downloads
+
+The Download items run yt-dlp (plus ffmpeg, which it needs to join YouTube's separate
+video and audio streams). **There is no browser-only version of this.** A page can only
+save files it is allowed to fetch, and YouTube serves its streams with no CORS header for
+other origins, so the bytes are unreachable from JavaScript; the player is YouTube's own
+iframe, sealed off from the page around it.
+
+So downloads work when the machine *serving* the page has both tools — i.e. `node dev.js`
+on your own computer. The Vercel copy can't, and says so with a dialog that explains why
+and hands you the command, rather than a toast that just says no.
+
 ## Desktop app
 
 SnoopyTube installs as a real app with its own window and its own icon — no Electron,
@@ -94,7 +118,9 @@ embedded player, so YouTube's own ads still appear on videos that have them.
 | `js/recommend.js` | The recommendation engine — the brain |
 | `js/components.js` | Card, thumbnail, chip and icon HTML builders |
 | `js/pages.js` | Sidebar nav and every page |
-| `js/urls.js` | Readable video links (Short / Medium / Long) |
+| `js/urls.js` | Readable video links (Short / Medium / Long) and the router's URL helpers |
+| `js/download.js` | The Download menu items, and what to say when the server can't |
+| `vercel.json` | Sends unknown paths to index.html, so /watch/abc works without a "#" |
 | `js/settings.js` | The Settings page: light/dark, link length, muted topics |
 | `js/install.js` | Registers `sw.js` and shows the "Install app" button |
 | `js/app.js` | Hash router, click handling, dialog, startup |

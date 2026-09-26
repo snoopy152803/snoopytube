@@ -40,7 +40,5 @@ async function runInstall(){
   if(outcome !== "accepted"){ installEvent = e; installButton(); }   // they said no — offer again later
 }
 
-// Installed apps open at start_url, which has no hash, so send them to the feed.
-if(standalone() && !location.hash) location.hash = "#/";
 document.body.classList.toggle("app", standalone());
 installButton();

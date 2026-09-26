@@ -1,9 +1,9 @@
 {
-  "id": "/?app=1",
+  "id": "/",
   "name": "SnoopyTube",
   "short_name": "SnoopyTube",
   "description": "Snoopy learns what you like and fetches YouTube videos for you.",
-  "start_url": "/?app=1",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
@@ -18,9 +18,9 @@
     { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ],
   "shortcuts": [
-    { "name": "Home", "url": "/#/" },
-    { "name": "Trending", "url": "/#/trending" },
-    { "name": "Subscriptions", "url": "/#/subscriptions" },
-    { "name": "History", "url": "/#/history" }
+    { "name": "Home", "url": "/" },
+    { "name": "Trending", "url": "/trending" },
+    { "name": "Subscriptions", "url": "/subscriptions" },
+    { "name": "History", "url": "/history" }
   ]
 }

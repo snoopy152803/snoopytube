@@ -1,15 +1,16 @@
-// app.js — Hash router, click handling and the toast. Loaded last.
+// app.js — Router, click handling and the toast. Loaded last.
 
-/* ---------- ROUTER ---------- */
+/* ---------- ROUTER ----------
+   Reads the real path (/watch/abc), not a "#" fragment. See js/urls.js for how that
+   works, and for the server-side fallback it depends on. */
 function render(){
-  const hash=location.hash||"#/";
-  const [path,qs]=hash.slice(1).split("?");
-  const params=new URLSearchParams(qs||""); const cat=params.get("cat")||"All";
+  const path=routePath();
+  const params=new URLSearchParams(location.search); const cat=params.get("cat")||"All";
   const seg=path.split("/").filter(Boolean);
   const main=document.getElementById("main");
   let html="";
   if(seg.length===0) html=pageHome(cat);
-  else if(seg[0]==="watch") html=pageWatch(videoIdFromHash()||seg[1]);   // extra path pieces are decoration (js/urls.js)
+  else if(seg[0]==="watch") html=pageWatch(videoId()||seg[1]);           // extra path pieces are decoration (js/urls.js)
   else if(seg[0]==="search") html=pageSearch(decodeURIComponent(seg.slice(1).join("/")||""));
   else if(seg[0]==="trending") html=pageTrending(cat);
   else if(seg[0]==="history") html=pageHistory();
@@ -18,14 +19,14 @@ function render(){
   else if(seg[0]==="added") html=pageAdded();
   else if(seg[0]==="channel") html=pageChannel(decodeURIComponent(seg[1]||""));
   else if(seg[0]==="settings") html=pageSettings();
-  else if(seg[0]==="reset"){ resetAll(); location.hash="#/"; return; }
+  else if(seg[0]==="reset"){ resetAll(); navigate("/",true); return; }
   else html=pageHome("All");
   main.innerHTML=html; renderNav(); renderTabBar(); closeDrawer();
   if(seg[0]!=="watch") window.scrollTo(0,0); else window.scrollTo({top:0});
   document.getElementById("searchInput").value=seg[0]==="search"?decodeURIComponent(seg[1]||""):"";
   document.title=(seg[0]==="watch"&&byId[seg[1]]?byId[seg[1]].title+" - ":"")+"SnoopyTube";
 }
-window.addEventListener("hashchange",render);
+window.addEventListener("popstate",render);          // Back / Forward
 
 /* ---------- ADD VIDEO DIALOG ---------- */
 function openAddDialog(){
@@ -39,30 +40,16 @@ async function submitAddDialog(){
   err.textContent=""; go.disabled=true; go.textContent="Fetching…";
   try{
     const v=await addCustomVideo(link,cat);
-    closeDialog(); toast("Added “"+v.title.slice(0,40)+(v.title.length>40?"…":"")+"”"); location.hash=videoHref(v); render();
+    closeDialog(); toast("Added “"+v.title.slice(0,40)+(v.title.length>40?"…":"")+"”"); navigate(videoHref(v));
   }catch(e){ err.textContent=e.message; go.disabled=false; go.textContent="Add to SnoopyTube"; }
 }
 
-/* ---------- SHARE & DOWNLOAD ---------- */
+/* ---------- SHARE ----------   (downloads live in js/download.js) ---------- */
 function shareVideo(id){
   const url="https://www.youtube.com/watch?v="+id;
   if(navigator.share) navigator.share({title:byId[id]?.title,url}).catch(()=>{});
   else navigator.clipboard?.writeText(url).then(()=>toast("YouTube link copied")).catch(()=>toast(url));
 }
-async function downloadVideo(id,fmt){
-  // api/download.js runs yt-dlp (+ffmpeg for MP3) on the server. That only exists
-  // when SnoopyTube runs locally with `node dev.js` — Vercel can't run yt-dlp.
-  const name=(byId[id]?.title||id).replace(/[\/:*?"<>|]+/g,"").slice(0,80);
-  const url=`/api/download?id=${id}&fmt=${fmt}&name=${encodeURIComponent(name)}`;
-  toast("Checking Snoopy's download tools…");
-  try{
-    const r=await fetch(url+"&check=1"); const j=await r.json();
-    if(!r.ok) return toast(j.error||"Downloads aren't available here");
-    toast(`Snoopy is fetching the ${fmt.toUpperCase()} — this can take a minute…`);
-    window.location.href=url;                 // server replies with a file attachment
-  }catch(e){ toast("Downloads only work when running SnoopyTube locally (node dev.js)"); }
-}
-
 /* ---------- EVENTS ---------- */
 // On a phone the button opens the drawer; on a desktop it collapses the sidebar.
 const isPhone=()=>window.matchMedia("(max-width:800px)").matches;
@@ -77,8 +64,17 @@ document.getElementById("searchToggle").onclick=()=>{
   document.getElementById("searchInput").focus();
 };
 document.getElementById("searchInput").addEventListener("blur",()=>setTimeout(()=>document.body.classList.remove("searching"),150));
-document.getElementById("searchForm").onsubmit=e=>{e.preventDefault();const q=document.getElementById("searchInput").value.trim();document.body.classList.remove("searching"); document.getElementById("searchInput").blur(); if(q)location.hash="#/search/"+encodeURIComponent(q)};
+document.getElementById("searchForm").onsubmit=e=>{e.preventDefault();const q=document.getElementById("searchInput").value.trim();document.body.classList.remove("searching"); document.getElementById("searchInput").blur(); if(q)navigate("/search/"+encodeURIComponent(q))};
 document.addEventListener("click",e=>{
+  // Plain left-clicks on our own links are routed in the page. Modified clicks
+  // (ctrl/cmd/shift/middle) are left alone, so "open in new tab" still works.
+  const link=e.target.closest("a");
+  if(link&&internalLink(link)&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey&&e.button===0
+     &&!link.id&&!e.target.closest("[data-menu],[data-act],[data-kids]")){
+    e.preventDefault(); navigate(link.getAttribute("href"));
+    if(e.target.closest("nav")) closeDrawer();
+    return;
+  }
   const menuBtn=e.target.closest("[data-menu]");
   document.querySelectorAll(".menu.open").forEach(m=>{ if(!menuBtn||m.id!=="menu-"+menuBtn.dataset.menu) m.classList.remove("open"); });
   document.querySelectorAll(".more.open").forEach(m=>m.classList.remove("open"));
@@ -87,17 +83,17 @@ document.addEventListener("click",e=>{
   if(act){
     const id=act.dataset.id, a=act.dataset.act;
     if(a==="like"){ toggleLike(id); onWatchPage()?refreshWatch(id):render(); }
-    else if(a==="mute"){ muteTag(act.dataset.tag); onWatchPage()?refreshUpNext(videoIdFromHash()):render(); }
+    else if(a==="mute"){ muteTag(act.dataset.tag); onWatchPage()?refreshUpNext(videoId()):render(); }
     else if(a==="share") shareVideo(id);
     else if(a==="dl") downloadVideo(id,act.dataset.fmt);
     else if(a==="yt") window.open("https://www.youtube.com/watch?v="+id,"_blank","noopener");
-    else if(a==="ni"){ notInterested(id); onWatchPage()?refreshUpNext(videoIdFromHash()):render(); }
+    else if(a==="ni"){ notInterested(id); onWatchPage()?refreshUpNext(videoId()):render(); }
     return;
   }
   if(e.target.closest("[data-stop]")) return;              // channel link inside a card
-  const c=e.target.closest(".card"); if(c){ e.preventDefault(); location.hash=watchHref(c.dataset.id); return; }
+  const c=e.target.closest(".card"); if(c){ e.preventDefault(); navigate(watchHref(c.dataset.id)); return; }
   // On the watch page these only redraw the controls row, so the video keeps playing.
-  const cur=()=>videoIdFromHash();
+  const cur=()=>videoId();
   const sub=e.target.closest("[data-sub]"); if(sub){ toggleSub(sub.dataset.sub); onWatchPage()?refreshWatch(cur()):render(); return; }
   const like=e.target.closest("[data-like]"); if(like){ toggleLike(like.dataset.like); onWatchPage()?refreshWatch(cur()):render(); return; }
   const dis=e.target.closest("[data-dislike]"); if(dis){ toggleDislike(dis.dataset.dislike); onWatchPage()?refreshWatch(cur()):render(); return; }
@@ -112,6 +108,7 @@ document.addEventListener("click",e=>{
   if(e.target.closest("#kidsOn")){ enableKids(); return; }
   if(e.target.closest("#kidsOff")){ disableKids(); return; }
   if(e.target.closest("#installBtn")){ runInstall(); return; }
+  const copy=e.target.closest("[data-copy]"); if(copy){ copyText(copy.dataset.copy); return; }
   const unmute=e.target.closest("[data-unmute]"); if(unmute){ unmuteTag(unmute.dataset.unmute); render(); return; }
   if(e.target.closest("[data-addvideo]")){ openAddDialog(); return; }
   if(e.target.closest("[data-closedialog]")||e.target.id==="dialog"){ closeDialog(); return; }

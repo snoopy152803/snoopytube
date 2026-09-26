@@ -49,8 +49,8 @@ self.addEventListener("fetch", e => {
     }catch(err){
       const hit = await cache.match(req);
       if(hit) return hit;
-      // A navigation with nothing cached for that exact URL still gets the shell,
-      // because routing happens in the page (#/watch/...).
+      // A navigation with nothing cached for that exact URL still gets the shell:
+      // /watch/abc is not a file, it's a path the page routes itself (js/urls.js).
       if(req.mode === "navigate"){ const shell = await cache.match("/index.html") || await cache.match("/"); if(shell) return shell; }
       throw err;
     }

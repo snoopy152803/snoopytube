@@ -13,7 +13,7 @@ const avatar=(ch,cls="",link=true)=>{
   const url=CHANNEL_AVATARS[ch];
   const inner=`${esc(ch.replace(/^the /i,"")[0])}${url?`<img src="${esc(url)}" alt="" loading="lazy" onerror="this.remove()">`:""}`;
   const attrs=`class="avatar ${cls}" style="background:hsl(${hue(ch)},55%,42%)" title="${esc(ch)}"`;
-  return link?`<a ${attrs} href="#/channel/${encodeURIComponent(ch)}" data-stop aria-label="${esc(ch)}">${inner}</a>`
+  return link?`<a ${attrs} href="/channel/${encodeURIComponent(ch)}" data-stop aria-label="${esc(ch)}">${inner}</a>`
              :`<div ${attrs}>${inner}</div>`;
 };
 const thumb=v=>`<div class="thumb"><div class="ph" style="background:linear-gradient(135deg,hsl(${hue(v.id)},40%,25%),hsl(${(hue(v.id)+60)%360},40%,15%))">${esc(v.title[0])}</div><img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" loading="lazy" alt="" onerror="this.style.display='none'">${v.dur?`<span class="dur ${v.dur==="LIVE"?"live":""}">${v.dur}</span>`:""}</div>`;
@@ -45,7 +45,7 @@ function card(r){
     ${thumb(v)}
     <div class="cbody">${avatar(v.ch)}<div class="cinfo">
       <a class="ctitle" href="${videoHref(v)}">${esc(v.title)}</a>
-      <div class="cmeta"><a class="ch" href="#/channel/${encodeURIComponent(v.ch)}" data-stop>${esc(v.ch)}</a></div>
+      <div class="cmeta"><a class="ch" href="/channel/${encodeURIComponent(v.ch)}" data-stop>${esc(v.ch)}</a></div>
       <div class="cmeta">${meta(v)}</div>
       ${whyChip(r.why)}
     </div></div>
@@ -58,7 +58,7 @@ function listCard(r,extra=""){
     <div class="cinfo">
       <a class="ctitle" href="${videoHref(v)}">${esc(v.title)}</a>
       <div class="cmeta">${meta(v)}${extra}</div>
-      <div class="chrow">${avatar(v.ch)}<a class="cmeta ch" href="#/channel/${encodeURIComponent(v.ch)}" data-stop>${esc(v.ch)}</a></div>
+      <div class="chrow">${avatar(v.ch)}<a class="cmeta ch" href="/channel/${encodeURIComponent(v.ch)}" data-stop>${esc(v.ch)}</a></div>
       <div class="desc">${v.cat} • ${v.tags.map(t=>"#"+t).join(" ")}</div>
       ${whyChip(r.why)}
     </div>${menuHtml(v)}</div>`;
