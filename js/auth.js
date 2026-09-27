@@ -148,6 +148,10 @@ function signOut(){
   toast("Signed out — SnoopyTube is back to local-only"); renderAuthButton();
 }
 
+// Where SnoopyTube normally lives. Anything else — a preview deployment, a local
+// port, a file:// page — is an origin Google won't recognise unless it's been added.
+const CANONICAL_ORIGIN = "https://snoopytube.vercel.app";
+
 /* ---------- YouTube API ---------- */
 async function ytApi(method, path, body){
   const r = await fetch(YT_API + path, { method, headers: { Authorization: "Bearer " + auth.token, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
@@ -267,6 +271,14 @@ function openSetupDialog(){
 function openYouTubeHelp(){
   const host = (FIREBASE_CONFIG.authDomain || "").replace(/\/$/, "");
   const d = document.getElementById("dialog");
+  // Google checks the *origin* a sign-in is attempted from against the OAuth client's
+  // "Authorized JavaScript origins", and refuses anything not on that list with
+  // "Error 400: origin_mismatch". That bites whenever SnoopyTube is opened somewhere
+  // new — a Vercel preview deployment, a different local port, an installed app that
+  // was installed from one of those. The address is the whole fix, so when it isn't
+  // the usual one, show it rather than leaving it to be guessed. (Only the owner ever
+  // sees an unusual origin; for everyone else this block never appears.)
+  const odd = location.origin !== CANONICAL_ORIGIN;
   d.innerHTML = `<div class="dialog"><h2>${ICONS.yt} Connecting YouTube</h2>
     <p>This lets your likes, dislikes and subscriptions here apply to your real YouTube account. Google will ask your permission in a popup.</p>
     <p class="note"><b>You'll see a warning — that's expected.</b><br>
@@ -275,6 +287,8 @@ function openYouTubeHelp(){
       2. Click <b>Go to ${esc(host)} (unsafe)</b><br>
       3. Tick the YouTube permission and press <b>Continue</b></p>
     <p>You can skip this entirely — SnoopyTube works fine without it, your likes just stay on this site.</p>
+    ${odd ? `<p class="note warn"><b>If Google says “Access blocked: origin_mismatch”</b>, this copy is running somewhere Google hasn't been told about. Add this exact address to the OAuth client's <b>Authorized JavaScript origins</b> (see SETUP.md), then wait a few minutes:</p>
+      <div class="cmdbox"><code>${esc(location.origin)}</code><button class="pill" data-copy="${esc(location.origin)}">Copy</button></div>` : ""}
     <div class="dlgbtns"><button class="pill" data-closedialog>Not now</button><button class="pill primary" data-connectyt>Continue to Google</button></div></div>`;
   d.classList.add("open");
 }

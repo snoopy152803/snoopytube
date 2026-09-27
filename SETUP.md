@@ -39,6 +39,24 @@ only allows that from origins you've listed on the OAuth client.
    - `http://localhost:8765` (only if you run it locally)
 4. **Save**, then wait a few minutes — Google is slow to apply this one
 
+### "Access blocked: Authorisation error — Error 400: origin_mismatch"
+
+Google compares the address SnoopyTube is running at against that list and refuses
+anything else. The address is the whole fix, so add whichever one you're actually on:
+
+* **A Vercel preview URL.** Every deployment also gets its own address, something like
+  `snoopytube-a1b2c3-yourname.vercel.app`. Installing the desktop app from one of those
+  pins the app to it. Use the plain `snoopytube.vercel.app` instead, or add that
+  deployment's origin too.
+* **A different local port.** `node dev.js` now honours `$PORT`, so if you started it on
+  anything other than 8765 that origin needs adding as well.
+* **An installed app** keeps the address it was installed from — uninstall and reinstall
+  from the right one if it's wrong.
+
+To see the exact address Google rejected, click **error details** on that error page, or
+open SnoopyTube's **Connect YouTube** dialog: when it's running somewhere unusual it
+prints the origin with a Copy button.
+
 Until that's done everything still works; the token just can't refresh silently, so
 the **Reconnect** button appears when one expires. The app detects the origin
 rejection and stops retrying rather than looping.
