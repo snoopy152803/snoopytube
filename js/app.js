@@ -17,7 +17,7 @@ function render(){
   else if(seg[0]==="liked") html=pageLiked();
   else if(seg[0]==="subscriptions") html=pageSubs();
   else if(seg[0]==="added") html=pageAdded();
-  else if(seg[0]==="channel") html=pageChannel(decodeURIComponent(seg[1]||""));
+  else if(seg[0]==="channel") html=pageChannel(decodeURIComponent(seg[1]||""),params);
   else if(seg[0]==="settings") html=pageSettings();
   else if(seg[0]==="reset"){ resetAll(); navigate("/",true); return; }
   else html=pageHome("All");
@@ -64,7 +64,13 @@ document.getElementById("searchToggle").onclick=()=>{
   document.getElementById("searchInput").focus();
 };
 document.getElementById("searchInput").addEventListener("blur",()=>setTimeout(()=>document.body.classList.remove("searching"),150));
-document.getElementById("searchForm").onsubmit=e=>{e.preventDefault();const q=document.getElementById("searchInput").value.trim();document.body.classList.remove("searching"); document.getElementById("searchInput").blur(); if(q){ rememberSearch(q); sgClose(); navigate("/search/"+encodeURIComponent(q)); }};
+document.getElementById("searchForm").onsubmit=e=>{
+  e.preventDefault();
+  const input=document.getElementById("searchInput"), q=input.value.trim();
+  sgClose();                                   // cancels any pending suggestion work too
+  input.blur(); document.body.classList.remove("searching");
+  if(q){ rememberSearch(q); navigate("/search/"+encodeURIComponent(q)); }
+};
 document.addEventListener("click",e=>{
   // Plain left-clicks on our own links are routed in the page. Modified clicks
   // (ctrl/cmd/shift/middle) are left alone, so "open in new tab" still works.
@@ -126,6 +132,7 @@ document.addEventListener("change",e=>{
   const g=e.target.closest("[data-set]"); if(!g) return;
   if(g.dataset.set==="theme") setTheme(e.target.value);
   if(g.dataset.set==="url") setUrlStyle(e.target.value);
+  if(g.dataset.set==="why") setShowWhy(e.target.checked);
 });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeDialog(); closeDrawer(); } });
 

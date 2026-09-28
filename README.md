@@ -129,7 +129,7 @@ embedded player, so YouTube's own ads still appear on videos that have them.
 | `js/state.js` | History / likes / subs / added videos in localStorage, and the actions |
 | `js/recommend.js` | The recommendation engine — the brain |
 | `js/components.js` | Card, thumbnail, chip and icon HTML builders |
-| `js/channel.js` | Fills real channel figures into the page |
+| `js/channel.js` | Real channel figures, and the Latest/Popular/Oldest sorting |
 | `js/suggest.js` | The search suggestions dropdown |
 | `js/pages.js` | Sidebar nav and every page |
 | `js/urls.js` | Readable video links (Short / Medium / Long) and the router's URL helpers |

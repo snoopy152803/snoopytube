@@ -124,7 +124,7 @@ function pageSearch(q){
   ${res.length?`<div class="list">${res.map(r=>listCard(r)).join("")}</div>`:""}
   ${catalogueOnly() ? `<p class="note" style="max-width:1100px">Kids mode is set to built-in videos only, so SnoopyTube isn't searching YouTube.${res.length?"":" Nothing here matched — try another word."}</p>`
     : `<h2 class="ytheading"><span class="ytlogo">▶</span> From YouTube</h2>
-  <div class="list" id="ytResults"><div class="searching">${ICONS.spark} Snoopy is sniffing around YouTube for “${esc(q)}”…</div></div>`}</div>`;
+  <div class="list" id="ytResults"><div class="sniffing">${ICONS.spark} Snoopy is sniffing around YouTube for “${esc(q)}”…</div></div>`}</div>`;
 }
 async function fillYouTubeResults(q){
   const box=document.getElementById("ytResults"); if(!box) return;
@@ -159,10 +159,34 @@ function pageAdded(){
   return `<div class="page"><div class="pagehead"><h1 class="pagetitle">Added by you</h1><button class="pill primary" data-addvideo>${ICONS.plus}Add video</button></div>
   ${list.length?`<div class="grid">${list.map(v=>card({v})).join("")}</div>`:`<div class="empty"><h2>Bring any YouTube video into SnoopyTube</h2>Paste a YouTube link and it joins the catalogue — Snoopy will recommend it like any other video.</div>`}</div>`;
 }
-function pageChannel(ch){
-  const list=VIDEOS.filter(v=>v.ch===ch); if(!list.length) return `<div class="page"><div class="empty"><h2>Channel not found</h2></div></div>`;
-  const mine=localTally(ch); const subbed=state.subs.includes(ch);
+function pageChannel(ch, params){
+  // kidsAllows was missing here: a channel page was showing everything from that
+  // channel whatever Kids mode said about it.
+  const all=VIDEOS.filter(v=>v.ch===ch && kidsAllows(v) && notMuted(v));
+  if(!all.length) return `<div class="page"><div class="empty"><h2>Channel not found</h2>Nothing from this channel is in SnoopyTube${kidsOn()?" that Kids mode allows":""}.</div></div>`;
+  const shorts=all.filter(isShort), longs=all.filter(v=>!isShort(v));
+  const tab=["home","videos","shorts"].includes(params.get("tab"))?params.get("tab"):"home";
+  const sort=CHANNEL_SORTS[params.get("sort")]?params.get("sort"):"latest";
+  const mine=localTally(ch), subbed=state.subs.includes(ch);
+  const base="/channel/"+encodeURIComponent(ch);
   setTimeout(()=>loadChannelStats(ch),0);              // real figures arrive and fill in
+
+  const tabLink=(id,label,n)=>n===0?"":`<a class="chtab ${tab===id?"on":""}" href="${base}${id==="home"?"":"?tab="+id}">${label}</a>`;
+  const sortLink=s2=>`<a class="chip ${sort===s2?"active":""}" href="${base}?tab=${tab}&sort=${s2}">${CHANNEL_SORTS[s2]}</a>`;
+  const sortBar=`<div class="chips">${Object.keys(CHANNEL_SORTS).map(sortLink).join("")}</div>`;
+  const shelf=(title,list)=>list.length?`<div class="shelf"><h2>${title}</h2><div class="row">${list.map(v=>card({v})).join("")}</div></div>`:"";
+
+  let body;
+  if(tab==="home"){
+    // YouTube's channel home: a couple of rows rather than one long list.
+    body=shelf("Latest",sortVideos(longs,"latest").slice(0,8))
+        +shelf("Popular",sortVideos(longs,"popular").slice(0,8))
+        +shelf("Shorts",sortVideos(shorts,"popular").slice(0,8));
+  }else{
+    const list=sortVideos(tab==="shorts"?shorts:longs,sort);
+    body=sortBar+`<div class="grid">${list.map(v=>card({v})).join("")}</div>`;
+  }
+
   return `<div class="page"><div class="chead">
     ${avatar(ch,"big",false)}
     <div class="chinfo"><h1>${esc(ch)}</h1>
@@ -170,7 +194,9 @@ function pageChannel(ch){
       <div class="cmeta mine">${mine.videos} video${mine.videos===1?"":"s"} in SnoopyTube${mine.views?` • ${fmtViews(mine.views)} views across them`:""}</div>
       <button class="pill ${subbed?"subbed":"primary"}" data-sub="${esc(ch)}">${subbed?"Subscribed ✓":"Subscribe"}</button>
     </div>
-  </div><div class="grid">${list.map(v=>card({v})).join("")}</div></div>`;
+  </div>
+  <div class="chtabs">${tabLink("home","Home",all.length)}${tabLink("videos","Videos",longs.length)}${tabLink("shorts","Shorts",shorts.length)}</div>
+  ${body}</div>`;
 }
 function pageWatch(id){
   const v=byId[id]; if(!v) return `<div class="page"><div class="empty"><h2>Video not found</h2></div></div>`;
@@ -212,7 +238,7 @@ function watchRow(v){
 function upNext(v){
   if(!catalogueOnly()) setTimeout(()=>fillUpNext(v),0);
   return `<h3>Up next</h3><div id="upnextLocal">${similar(v, catalogueOnly()?20:8).map(sideCard).join("")}</div>
-    ${catalogueOnly() ? "" : `<div id="upnextYt"><div class="searching small">${ICONS.spark} Finding related videos on YouTube…</div></div>`}`;
+    ${catalogueOnly() ? "" : `<div id="upnextYt"><div class="sniffing small">${ICONS.spark} Finding related videos on YouTube…</div></div>`}`;
 }
 // Ask YouTube for videos like this one: the channel name plus a couple of title words.
 // Works for any video, including ones that came from search and have no catalogue neighbours.

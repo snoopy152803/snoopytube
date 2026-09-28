@@ -64,3 +64,38 @@ function localTally(ch){
   const list = VIDEOS.filter(v => v.ch === ch);
   return { videos: list.length, views: list.reduce((a, v) => a + (v.views || 0), 0) };
 }
+
+/* ---------- sorting a channel's videos ----------
+   YouTube gives a channel Latest / Popular / Oldest, and it needs an actual date to do
+   that. All SnoopyTube has is the "3 years ago" / "9mo ago" text that came with the
+   video, so that gets turned back into an age. It's only as precise as the text — a
+   video "1 year ago" could be 12 or 23 months old — which is fine for ordering, and is
+   why the label stays as YouTube wrote it rather than being turned into a date. */
+const AGE_UNITS = { second:1, sec:1, minute:60, min:60, hour:3600, hr:3600, h:3600,
+  day:86400, d:86400, week:604800, w:604800, month:2629800, mo:2629800,
+  year:31557600, y:31557600 };
+
+// "4 months ago" / "9mo ago" / "1y ago" -> roughly that many seconds. Unknown text
+// sorts last rather than pretending to be new.
+function ageSeconds(age){
+  const m = String(age || "").toLowerCase().match(/(\d+)\s*([a-z]+)/);
+  if(!m) return null;
+  const unit = Object.keys(AGE_UNITS).filter(u => m[2].startsWith(u)).sort((a, b) => b.length - a.length)[0];
+  return unit ? +m[1] * AGE_UNITS[unit] : null;
+}
+// "1:00:22" -> 3622. Live streams and unknown durations count as long, not short.
+function durSeconds(dur){
+  if(!dur || dur === "LIVE") return Infinity;
+  const p = String(dur).split(":").map(Number);
+  return p.some(isNaN) ? Infinity : p.reduce((a, n) => a * 60 + n, 0);
+}
+const isShort = v => durSeconds(v.dur) <= 60;
+
+const CHANNEL_SORTS = { latest: "Latest", popular: "Popular", oldest: "Oldest" };
+function sortVideos(list, sort){
+  const withAge = v => { const s = ageSeconds(v.age); return s === null ? Infinity : s; };
+  const copy = list.slice();
+  if(sort === "popular") return copy.sort((a, b) => (b.views || 0) - (a.views || 0));
+  if(sort === "oldest")  return copy.sort((a, b) => withAge(b) - withAge(a));
+  return copy.sort((a, b) => withAge(a) - withAge(b));      // latest
+}

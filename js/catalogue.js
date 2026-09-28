@@ -42,8 +42,38 @@ function buildIndex(){
         }));
   // Category names double as tags, so "Because you watch youtube" would tell you
   // nothing you didn't already know.
-  VAGUE_TAGS = new Set([...CATS.map(c => c.toLowerCase()), "youtube", "video", "videos", "shorts", "live", "new", "best", "top", "watch"]);
+  VAGUE_TAGS = new Set([...CATS.map(c => c.toLowerCase()), "youtube", "video", "videos", "shorts", "short", "live", ...NON_TOPIC]);
 }
+
+// Tags are words lifted out of video titles, so plenty of them are just English rather
+// than subjects: "can" turns up in seven catalogue titles, which was enough to produce
+// "Because you watch Can". None of these describe what a video is about, so none of
+// them may become a label or appear in Woodstock's notes. Real subjects — chess, math,
+// ai, gm, smp — are deliberately absent from this list.
+const NON_TOPIC = ("a an the and or but if then than that this these those there here "
+  + "i you he she it we they me him her them my your his its our their "
+  + "is are was were be been being am do does did doing done "
+  + "can cant cannot could should would will wont shall may might must "
+  + "doesn didn dont don isnt arent wasnt werent hasnt havent couldnt wouldnt shouldnt "
+  + "have has had get gets got getting make makes made making take takes took taken "
+  + "go goes going gone come comes came put puts give gives gave say says said "
+  + "tell tells told ask asks asked find finds found think thinks thought "
+  + "know knows known need needs want wants use uses used using try tries tried "
+  + "see sees seen look looks looking watch watching show shows shown "
+  + "play plays played playing player players win wins won lose loses lost beat beats "
+  + "stop stops start starts turn turns help helps let lets keep keeps "
+  + "best worst better worse most more less least much many every each all some any "
+  + "first last next old older new newer top bottom big small little great good bad "
+  + "real true false just only even ever never always again still yet also very really "
+  + "quick quicker simple easy easier hard harder strong stronger strongest "
+  + "deadly deadliest survived survive collected hunted trapped creative "
+  + "thing things time times way ways day days year years week weeks month months "
+  + "world people man men woman women guy guys kid person someone something anything "
+  + "part parts full episode ep official ft feat vs versus spoke said "
+  + "what when where why how who which whose "
+  + "one two three four five six seven eight nine ten hundred thousand million "
+  + "for with without from into onto about after before during while because so "
+  + "not no yes ok okay").split(" ");
 // A tag only earns a label if it's one we wrote by hand and it groups more than one
 // video — otherwise it's a stray word from some title.
 const tellingTag = t => !VAGUE_TAGS.has(t) && (TAG_COUNTS[t] || 0) >= 2;

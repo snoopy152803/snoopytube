@@ -10,7 +10,8 @@ const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],
   theme:"dark",          // "dark" | "light" | "system"  (Settings page)
   urlStyle:"medium",     // "short" | "medium" | "long"  (js/urls.js)
   mutedTags:[],          // topics you've told Woodstock to drop
-  recent:[]};            // recent searches, for the suggestions dropdown
+  recent:[],             // recent searches, for the suggestions dropdown
+  showWhy:true};         // the "Because you watch …" line under each card
 let state={...EMPTY};
 try{
   // "mytube.state.v1" is the old name from before the Snoopy makeover — keep that data.
@@ -68,7 +69,7 @@ function resetAll(){
   // Settings aren't "your data" in the sense this button means — a reset shouldn't put
   // the site back into dark mode or unlock Kids mode.
   state={...EMPTY,mini:state.mini,kids:state.kids,kidsStrict:state.kidsStrict,
-         theme:state.theme,urlStyle:state.urlStyle,mutedTags:state.mutedTags};
+         theme:state.theme,urlStyle:state.urlStyle,mutedTags:state.mutedTags,showWhy:state.showWhy};
   save(); toast("SnoopyTube has been reset"); render();
 }
 

@@ -34,7 +34,18 @@ function setUrlStyle(s){
   toast("Links are now " + s); render();
 }
 
+function setShowWhy(on){
+  state.showWhy = !!on; save();
+  toast(on ? "Showing why each video was picked" : "Reasons hidden");
+  render();
+}
+
 /* ---------- THE PAGE ---------- */
+function checkRow(id, on, label, note){
+  return `<label class="setrow${on ? " on" : ""}">
+    <input type="checkbox" id="${id}" ${on ? "checked" : ""}>
+    <span class="setmain"><b>${label}</b>${note ? `<span class="setnote">${note}</span>` : ""}</span></label>`;
+}
 function radioRow(name, value, current, label, note){
   return `<label class="setrow${value === current ? " on" : ""}">
     <input type="radio" name="${name}" value="${value}" ${value === current ? "checked" : ""}>
@@ -64,6 +75,14 @@ function pageSettings(){
         ${radioRow("url", "short", style, "Short", `<code>${esc(exampleUrl("short"))}</code>`)}
         ${radioRow("url", "medium", style, "Medium", `<code>${esc(exampleUrl("medium"))}</code>`)}
         ${radioRow("url", "long", style, "Long", `<code>${esc(exampleUrl("long"))}</code>`)}
+      </div>
+    </section>
+
+    <section class="setsec">
+      <h2>Recommendations</h2>
+      <div class="setgroup" data-set="why">
+        ${checkRow("showWhy", state.showWhy !== false, "Show why a video was recommended",
+          "The little line under each card — “Because you watch Openings”, “From GothamChess — subscribed”. Turning it off changes nothing about what you're shown, only whether Snoopy explains himself.")}
       </div>
     </section>
 

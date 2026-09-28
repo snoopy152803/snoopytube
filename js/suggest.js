@@ -10,6 +10,12 @@
 
 const RECENT_MAX = 12;
 let sgItems = [], sgActive = -1, sgTimer = null, sgSeq = 0;
+// Set when the list is dismissed on purpose (Enter, Escape, picking a row). Without
+// it, work already in flight — the debounce timer, or a reply from api/suggest that
+// hadn't arrived yet — reopened the list a moment after it closed, which is why the
+// box kept coming back and took several clicks to get rid of. Cleared by the next
+// deliberate focus or keystroke.
+let sgSuppressed = false;
 
 const sgBox = () => document.getElementById("suggestBox");
 const sgInput = () => document.getElementById("searchInput");
@@ -42,6 +48,7 @@ function localMatches(q){
 
 async function showSuggestions(){
   const box = sgBox(), input = sgInput(); if(!box || !input) return;
+  if(sgSuppressed) return;          // dismissed on purpose; the next focus or keystroke re-arms it
   const q = input.value.trim();
   const recent = (state.recent || []).filter(r => !q || r.toLowerCase().startsWith(q.toLowerCase())).slice(0, q ? 3 : 8);
 
@@ -62,7 +69,7 @@ async function showSuggestions(){
 }
 
 function sgRender(items){
-  const box = sgBox(); if(!box) return;
+  const box = sgBox(); if(!box || sgSuppressed) return;
   sgItems = items; sgActive = -1;
   if(!items.length){ sgClose(); return; }
   box.innerHTML = items.map((it, i) => `<div class="sgrow" data-i="${i}">
@@ -73,11 +80,16 @@ function sgRender(items){
   box.classList.add("open");
   document.body.classList.add("suggesting");
 }
+// close() is also what the rest of the app calls when a search is submitted, so it
+// cancels everything outstanding rather than just hiding the box.
 function sgClose(){
+  sgSuppressed = true; clearTimeout(sgTimer); sgSeq++;
   const box = sgBox(); if(!box) return;
   box.classList.remove("open"); box.innerHTML = ""; sgItems = []; sgActive = -1;
   document.body.classList.remove("suggesting");
 }
+// The next thing the person actually does re-arms it.
+const sgWake = () => { sgSuppressed = false; };
 function sgHighlight(n){
   const box = sgBox(); if(!box || !sgItems.length) return;
   sgActive = (n + sgItems.length) % sgItems.length;
@@ -99,8 +111,8 @@ function sgChoose(i){
 function initSuggest(){
   const input = sgInput(); if(!input) return;
   input.setAttribute("autocomplete", "off");
-  input.addEventListener("input", () => { clearTimeout(sgTimer); sgTimer = setTimeout(showSuggestions, 120); });
-  input.addEventListener("focus", showSuggestions);
+  input.addEventListener("input", () => { sgWake(); clearTimeout(sgTimer); sgTimer = setTimeout(showSuggestions, 120); });
+  input.addEventListener("focus", () => { sgWake(); showSuggestions(); });
   input.addEventListener("keydown", e => {
     if(!sgItems.length) return;
     if(e.key === "ArrowDown"){ e.preventDefault(); sgHighlight(sgActive + 1); }

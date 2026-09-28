@@ -17,7 +17,8 @@ const avatar=(ch,cls="",link=true)=>{
              :`<div ${attrs}>${inner}</div>`;
 };
 const thumb=v=>`<div class="thumb"><div class="ph" style="background:linear-gradient(135deg,hsl(${hue(v.id)},40%,25%),hsl(${(hue(v.id)+60)%360},40%,15%))">${esc(v.title[0])}</div><img src="https://i.ytimg.com/vi/${v.id}/hqdefault.jpg" loading="lazy" alt="" onerror="this.style.display='none'">${v.dur?`<span class="dur ${v.dur==="LIVE"?"live":""}">${v.dur}</span>`:""}</div>`;
-const whyChip=w=>w?`<div class="why"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2zm-3 17h6v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-1z"/></svg>${esc(w.t)}</div>`:"";
+// Switched off in Settings by anyone who'd rather not be told why.
+const whyChip=w=>(w&&state.showWhy!==false)?`<div class="why"><svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2zm-3 17h6v1a2 2 0 0 1-2 2h-2a2 2 0 0 1-2-2v-1z"/></svg>${esc(w.t)}</div>`:"";
 // The ⋮ menu. Same items on cards and on the watch page.
 const menuItems=v=>`
   <div data-act="like" data-id="${v.id}">${ICONS.liked}${state.liked.includes(v.id)?"Remove from liked":"Add to liked videos"}</div>
