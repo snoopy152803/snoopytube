@@ -3,6 +3,7 @@
 // the same way Vercel does in production. Downloads only work here, locally.
 const http = require("http"), fs = require("fs"), path = require("path");
 const search = require("./api/search.js"), download = require("./api/download.js"), kids = require("./api/kids.js");
+const channel = require("./api/channel.js"), suggest = require("./api/suggest.js");
 const PORT = process.env.PORT || 8765;
 const TYPES = {".html":"text/html", ".css":"text/css", ".js":"text/javascript", ".json":"application/json", ".png":"image/png", ".svg":"image/svg+xml",
   ".webmanifest":"application/manifest+json", ".ico":"image/x-icon", ".jpg":"image/jpeg", ".webp":"image/webp"};
@@ -12,6 +13,8 @@ http.createServer((req, res) => {
   if(url.pathname === "/api/search") return search(req, res);
   if(url.pathname === "/api/download") return download(req, res);
   if(url.pathname === "/api/kids") return kids(req, res);
+  if(url.pathname === "/api/channel") return channel(req, res);
+  if(url.pathname === "/api/suggest") return suggest(req, res);
   let file = path.join(__dirname, url.pathname === "/" ? "index.html" : url.pathname);
   fs.readFile(file, (err, data) => {
     // SnoopyTube uses real paths (/watch/abc), and there is no file there — the page

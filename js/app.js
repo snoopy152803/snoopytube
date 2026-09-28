@@ -64,7 +64,7 @@ document.getElementById("searchToggle").onclick=()=>{
   document.getElementById("searchInput").focus();
 };
 document.getElementById("searchInput").addEventListener("blur",()=>setTimeout(()=>document.body.classList.remove("searching"),150));
-document.getElementById("searchForm").onsubmit=e=>{e.preventDefault();const q=document.getElementById("searchInput").value.trim();document.body.classList.remove("searching"); document.getElementById("searchInput").blur(); if(q)navigate("/search/"+encodeURIComponent(q))};
+document.getElementById("searchForm").onsubmit=e=>{e.preventDefault();const q=document.getElementById("searchInput").value.trim();document.body.classList.remove("searching"); document.getElementById("searchInput").blur(); if(q){ rememberSearch(q); sgClose(); navigate("/search/"+encodeURIComponent(q)); }};
 document.addEventListener("click",e=>{
   // Plain left-clicks on our own links are routed in the page. Modified clicks
   // (ctrl/cmd/shift/middle) are left alone, so "open in new tab" still works.
@@ -139,5 +139,6 @@ mergeCustomVideos(state.custom);   // videos you added from YouTube links
 buildIndex();
 applyTheme();                      // before the first paint, so there's no flash
 render();
+initSuggest();
 initAuth();
 syncKids(); watchKids();   // the server has the final say on Kids mode

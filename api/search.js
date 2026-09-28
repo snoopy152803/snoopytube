@@ -9,6 +9,7 @@
 const MAX_RESULTS = 20;
 const { kidsStateFor } = require("./kids.js");
 const { blockedWord } = require("./_kidwords.js");
+const { cacheFor } = require("./_cache.js");
 
 async function searchYouTube(query, kids){
   const url = "https://www.youtube.com/results?search_query=" + encodeURIComponent(query) + "&sp=EgIQAQ%253D%253D"; // sp = "videos only"
@@ -79,10 +80,9 @@ module.exports = async function handler(req, res){
   const kids = params.get("kids") === "1" || locked.on;
   // Catalogue-only: refuse to search YouTube at all for this household. Enforced
   // here so it holds even if the page is edited.
-  if(locked.catalogueOnly) return res.end(JSON.stringify({ videos: [], catalogueOnly: true }));
   res.setHeader("Content-Type", "application/json");
-  res.setHeader("Cache-Control", "s-maxage=600, stale-while-revalidate=3600");
-  res.setHeader("Vary", "Accept");   // Vercel caches each query for 10 min
+  cacheFor(res, locked, 600);        // see api/_cache.js — the lock has to bite immediately
+  if(locked.catalogueOnly) return res.end(JSON.stringify({ videos: [], catalogueOnly: true }));
   if(!q.trim()){ res.statusCode = 400; return res.end(JSON.stringify({error: "missing q"})); }
   try{
     res.end(JSON.stringify({videos: await searchYouTube(q, kids)}));

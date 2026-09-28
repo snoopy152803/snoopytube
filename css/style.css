@@ -354,3 +354,40 @@ body.mini .kidsbadge{display:none}
 .cmdbox code{flex:1;font-family:ui-monospace,Consolas,monospace;font-size:13px;word-break:break-all}
 .cmdbox .pill{flex:none;background:var(--bg4);height:32px}
 .dialog .note code{font-family:ui-monospace,Consolas,monospace;font-size:12px;background:var(--bg3);padding:1px 5px;border-radius:4px}
+
+/* ---------- channel page header ----------
+   Two rows of numbers, deliberately distinct: the channel's own figures come from
+   YouTube (js/channel.js), the second line is SnoopyTube's own tally and says so. */
+.chead{display:flex;align-items:center;gap:24px;padding:32px 0 16px;border-bottom:1px solid var(--line);margin-bottom:8px}
+.chinfo{min-width:0}
+.chinfo h1{font-size:32px;font-weight:700;line-height:1.2}
+.avatar.big{width:128px;height:128px;font-size:48px}
+.ytstats{font-size:14px;color:var(--text);margin-top:4px}
+.chinfo .mine{font-size:13px;margin-top:2px}
+.chinfo .pill{margin-top:12px}
+.chstat.unknown{color:var(--text2);font-size:13px}
+
+@media (max-width:800px){
+  .chead{gap:16px;padding:20px 0 12px}
+  .avatar.big{width:80px;height:80px;font-size:32px}
+  .chinfo h1{font-size:22px}
+}
+
+/* ---------- search suggestions (js/suggest.js) ---------- */
+.hcenter{position:relative}
+.suggest{display:none;position:absolute;top:44px;left:0;right:64px;background:var(--bg);border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 20px rgba(0,0,0,.4);padding:8px 0;z-index:60;max-height:70vh;overflow-y:auto}
+.suggest.open{display:block}
+.sgrow{display:flex;align-items:center;gap:14px;padding:7px 16px;cursor:pointer}
+.sgrow:hover,.sgrow.on{background:var(--bg3)}
+.sgicon{width:20px;flex:none;display:flex;color:var(--text2)}
+.sgicon svg{width:20px;height:20px;fill:currentColor}
+.sgtext{flex:1;font-size:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sgx{flex:none;color:var(--text2);font-size:18px;line-height:1;padding:0 6px;border-radius:50%}
+.sgx:hover{background:var(--bg4);color:var(--text)}
+:root[data-theme="light"] .suggest{box-shadow:0 4px 20px rgba(0,0,0,.15)}
+
+@media (max-width:800px){
+  /* the search box takes over the header on a phone, so the list spans it */
+  body.searching .hcenter{position:static}
+  body.searching .suggest{top:var(--header);left:0;right:0;border-radius:0;border-left:none;border-right:none}
+}

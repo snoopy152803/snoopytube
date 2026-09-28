@@ -9,7 +9,8 @@ const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],
   kids:false,kidsStrict:false,
   theme:"dark",          // "dark" | "light" | "system"  (Settings page)
   urlStyle:"medium",     // "short" | "medium" | "long"  (js/urls.js)
-  mutedTags:[]};         // topics you've told Woodstock to drop
+  mutedTags:[],          // topics you've told Woodstock to drop
+  recent:[]};            // recent searches, for the suggestions dropdown
 let state={...EMPTY};
 try{
   // "mytube.state.v1" is the old name from before the Snoopy makeover — keep that data.

@@ -161,16 +161,21 @@ function pageAdded(){
 }
 function pageChannel(ch){
   const list=VIDEOS.filter(v=>v.ch===ch); if(!list.length) return `<div class="page"><div class="empty"><h2>Channel not found</h2></div></div>`;
-  const total=list.reduce((a,v)=>a+v.views,0); const subbed=state.subs.includes(ch);
-  return `<div class="page"><div style="display:flex;align-items:center;gap:24px;padding:32px 0 16px;border-bottom:1px solid var(--line);margin-bottom:8px">
-    ${avatar(ch,"",false)}<style>.page>div>.avatar{width:128px;height:128px;font-size:48px}</style>
-    <div><h1 style="font-size:32px;font-weight:700">${esc(ch)}</h1><div class="cmeta">${fmtViews(total)} total views • ${list.length} video${list.length===1?"":"s"}</div>
-    <button class="pill ${subbed?"subbed":"primary"}" data-sub="${esc(ch)}" style="margin-top:12px">${subbed?"Subscribed ✓":"Subscribe"}</button></div>
+  const mine=localTally(ch); const subbed=state.subs.includes(ch);
+  setTimeout(()=>loadChannelStats(ch),0);              // real figures arrive and fill in
+  return `<div class="page"><div class="chead">
+    ${avatar(ch,"big",false)}
+    <div class="chinfo"><h1>${esc(ch)}</h1>
+      <div class="cmeta ytstats">${chSlot(ch,"summary","Asking YouTube…")}</div>
+      <div class="cmeta mine">${mine.videos} video${mine.videos===1?"":"s"} in SnoopyTube${mine.views?` • ${fmtViews(mine.views)} views across them`:""}</div>
+      <button class="pill ${subbed?"subbed":"primary"}" data-sub="${esc(ch)}">${subbed?"Subscribed ✓":"Subscribe"}</button>
+    </div>
   </div><div class="grid">${list.map(v=>card({v})).join("")}</div></div>`;
 }
 function pageWatch(id){
   const v=byId[id]; if(!v) return `<div class="page"><div class="empty"><h2>Video not found</h2></div></div>`;
   if(!state.history[0]||state.history[0].id!==id) recordWatch(id);
+  setTimeout(()=>loadChannelStats(v.ch),0);            // real subscriber count (js/channel.js)
   return `<div class="watch"><div class="wmain">
     <div class="player"><iframe src="https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0" title="${esc(v.title)}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>
     <h1 class="wtitle">${esc(v.title)}</h1>
@@ -192,7 +197,7 @@ Category: ${v.cat}</div>
 // can redraw just this bit — re-rendering the whole page would restart the video.
 function watchRow(v){
   const id=v.id, liked=state.liked.includes(id), disliked=state.disliked.includes(id), subbed=state.subs.includes(v.ch);
-  return `<div class="wch">${avatar(v.ch)}<div><a class="name" href="/channel/${encodeURIComponent(v.ch)}">${esc(v.ch)}</a><div class="subs">${fmtViews(Math.round((v.views||1e5)/40))} subscribers</div></div>
+  return `<div class="wch">${avatar(v.ch)}<div><a class="name" href="/channel/${encodeURIComponent(v.ch)}">${esc(v.ch)}</a><div class="subs">${chSlot(v.ch,"subs","")}</div></div>
       <button class="pill ${subbed?"subbed":"primary"}" data-sub="${esc(v.ch)}" style="margin-left:12px">${subbed?"Subscribed ✓":"Subscribe"}</button></div>
     <div class="wacts">
       <div class="likegroup">

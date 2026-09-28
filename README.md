@@ -95,6 +95,15 @@ that keeps a copy of the shell so the app still opens on a bad connection.
 The service worker never caches `/api/*`, so Kids mode is still decided by the server
 on every single call — an installed app can't be used to serve a stale "off".
 
+## Whose numbers are whose
+
+SnoopyTube only knows the videos it has actually seen, so any total it works out itself
+describes its own catalogue. Those tallies used to be printed under a channel name as
+if they were the channel's — "18 videos · 23M total views" for a channel with 1,735
+videos and 1.5 billion views. Now a channel page shows YouTube's real figures on one
+line and SnoopyTube's own count, labelled, on the next. The subscriber count on a watch
+page is real too; it used to be the view count divided by 40.
+
 ## No ads, no tracking
 
 SnoopyTube shows no ads of its own and collects nothing — your history and
@@ -108,6 +117,9 @@ embedded player, so YouTube's own ads still appear on videos that have them.
 | `index.html` | Page skeleton: header, sidebar, main area, dialog |
 | `css/style.css` | YouTube's dark layout with a Peanuts palette |
 | `api/search.js` | Serverless function: search YouTube and return the video links |
+| `api/suggest.js` | YouTube's own search suggestions, for the dropdown |
+| `api/channel.js` | Real subscriber / video / view counts, from a channel's About page |
+| `api/_cache.js` | Cache headers for those three — see the note inside about Kids mode |
 | `api/download.js` | Runs yt-dlp/ffmpeg and sends the file (local only) |
 | `dev.js` | Local server that serves the site *and* runs `api/search.js` |
 | `js/catalogue.js` | The `VIDEOS` list and `addVideos()` helper (loaded first) |
@@ -117,6 +129,8 @@ embedded player, so YouTube's own ads still appear on videos that have them.
 | `js/state.js` | History / likes / subs / added videos in localStorage, and the actions |
 | `js/recommend.js` | The recommendation engine — the brain |
 | `js/components.js` | Card, thumbnail, chip and icon HTML builders |
+| `js/channel.js` | Fills real channel figures into the page |
+| `js/suggest.js` | The search suggestions dropdown |
 | `js/pages.js` | Sidebar nav and every page |
 | `js/urls.js` | Readable video links (Short / Medium / Long) and the router's URL helpers |
 | `js/download.js` | The Download menu items, and what to say when the server can't |
