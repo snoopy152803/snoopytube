@@ -57,8 +57,10 @@ const closeDrawer=()=>document.body.classList.remove("drawer");
 document.getElementById("menuBtn").onclick=()=>{
   if(isPhone()) return document.body.classList.toggle("drawer");
   state.mini=!state.mini; save(); document.body.classList.toggle("mini",state.mini);
+document.body.classList.toggle("compact",!!state.compact);
 };
 document.body.classList.toggle("mini",state.mini);
+document.body.classList.toggle("compact",!!state.compact);
 document.getElementById("searchToggle").onclick=()=>{
   document.body.classList.add("searching");
   document.getElementById("searchInput").focus();
@@ -120,6 +122,8 @@ document.addEventListener("click",e=>{
   if(e.target.closest("[data-closedialog]")||e.target.id==="dialog"){ closeDialog(); return; }
   if(e.target.closest("#loadMore")){ appendMore(); return; }
   if(e.target.closest("#clearHist")){ clearHistory(); return; }
+  if(e.target.closest("#clearRecent")){ state.recent=[]; save(); toast("Remembered searches cleared"); render(); return; }
+  if(e.target.closest("#exportData")){ exportData(); return; }
   if(e.target.closest("#resetBtn")){ e.preventDefault(); resetAll(); return; }
 });
 let toastT; function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),2600); }
@@ -129,10 +133,15 @@ document.addEventListener("submit",e=>{
 });
 // Settings radios (see js/settings.js).
 document.addEventListener("change",e=>{
+  if(e.target.id==="importFile"){ const f=e.target.files?.[0]; if(f) importData(f); e.target.value=""; return; }
   const g=e.target.closest("[data-set]"); if(!g) return;
   if(g.dataset.set==="theme") setTheme(e.target.value);
   if(g.dataset.set==="url") setUrlStyle(e.target.value);
   if(g.dataset.set==="why") setShowWhy(e.target.checked);
+  if(g.dataset.set==="compact") setCompact(e.target.checked);
+  if(g.dataset.set==="history") setPauseHistory(e.target.checked);
+  if(g.dataset.set==="suggest") setSuggest(e.target.checked);
+  if(g.dataset.set==="explore") setExplore(e.target.value);
 });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"){ closeDialog(); closeDrawer(); } });
 

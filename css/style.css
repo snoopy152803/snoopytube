@@ -401,3 +401,16 @@ body.mini .kidsbadge{display:none}
 .chtab:hover{color:var(--text)}
 .chtab.on{color:var(--text);border-bottom-color:var(--text)}
 .settings .setrow input[type=checkbox]{accent-color:var(--red)}
+
+/* ---------- subscribed channels in the sidebar ---------- */
+.subitem{height:auto;min-height:44px;padding-top:4px;padding-bottom:4px;gap:16px}
+.subtext{min-width:0;display:flex;flex-direction:column;line-height:1.25}
+.subname{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subtext .chstat{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.subtext .chstat:empty{display:none}
+body.mini .subtext{display:none}
+
+/* ---------- compact cards (Settings → Appearance) ---------- */
+body.compact .grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:24px 12px}
+body.compact .ctitle{font-size:14px;line-height:19px}
+body.compact .avatar{width:28px;height:28px;font-size:12px}

@@ -11,7 +11,11 @@ const EMPTY={history:[],liked:[],disliked:[],subs:[],notInterested:[],custom:[],
   urlStyle:"medium",     // "short" | "medium" | "long"  (js/urls.js)
   mutedTags:[],          // topics you've told Woodstock to drop
   recent:[],             // recent searches, for the suggestions dropdown
-  showWhy:true};         // the "Because you watch …" line under each card
+  showWhy:true,          // the "Because you watch …" line under each card
+  pauseHistory:false,    // stop recording watches (and so stop learning from them)
+  suggest:true,          // the search suggestions dropdown
+  explore:"balanced",    // "safe" | "balanced" | "adventurous" — see recommend.js
+  compact:false};        // smaller cards, more of them per row
 let state={...EMPTY};
 try{
   // "mytube.state.v1" is the old name from before the Snoopy makeover — keep that data.
@@ -22,6 +26,9 @@ const save=()=>localStorage.setItem(KEY,JSON.stringify(state));
 
 /* ---------- WATCHING / LIKING / SUBSCRIBING ---------- */
 function recordWatch(id){
+  // Paused in Settings: the video still plays, it just isn't written down — and since
+  // recommendations are built from history, Snoopy stops learning from it too.
+  if(state.pauseHistory) return;
   keepVideo(id);
   const i=state.history.findIndex(h=>h.id===id);
   let n=1; if(i>-1){ n=(state.history[i].n||1)+1; state.history.splice(i,1); }
@@ -69,7 +76,8 @@ function resetAll(){
   // Settings aren't "your data" in the sense this button means — a reset shouldn't put
   // the site back into dark mode or unlock Kids mode.
   state={...EMPTY,mini:state.mini,kids:state.kids,kidsStrict:state.kidsStrict,
-         theme:state.theme,urlStyle:state.urlStyle,mutedTags:state.mutedTags,showWhy:state.showWhy};
+         theme:state.theme,urlStyle:state.urlStyle,mutedTags:state.mutedTags,showWhy:state.showWhy,
+         pauseHistory:state.pauseHistory,suggest:state.suggest,explore:state.explore,compact:state.compact};
   save(); toast("SnoopyTube has been reset"); render();
 }
 

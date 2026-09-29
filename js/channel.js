@@ -10,17 +10,37 @@
 // re-render, so nothing restarts a video that's playing.
 
 const CH_STATS = new Map();          // name -> stats object, or null if YouTube had none
+const CH_PENDING = new Map();        // name -> the in-flight promise, so we ask only once
 
-async function channelStats(name){
-  if(CH_STATS.has(name)) return CH_STATS.get(name);
-  let stats = null;
-  try{
-    const r = await fetch("/api/channel?name=" + encodeURIComponent(name));
-    const j = await r.json();
-    stats = (r.ok && !j.error && !j.catalogueOnly) ? j : null;
-  }catch(e){}                        // offline, or no API here — fall back to local only
-  CH_STATS.set(name, stats);
-  return stats;
+/* Each lookup is a page fetch on the server, and the sidebar asks about every channel
+   you subscribe to at once. Two at a time keeps that polite and still fills the list
+   quickly; the rest wait their turn. */
+let chActive = 0; const chQueue = [];
+function runQueue(){
+  while(chActive < 2 && chQueue.length){
+    const job = chQueue.shift(); chActive++;
+    job().finally(() => { chActive--; runQueue(); });
+  }
+}
+
+function channelStats(name){
+  if(CH_STATS.has(name)) return Promise.resolve(CH_STATS.get(name));
+  if(CH_PENDING.has(name)) return CH_PENDING.get(name);
+  const p = new Promise(resolve => {
+    chQueue.push(async () => {
+      let stats = null;
+      try{
+        const r = await fetch("/api/channel?name=" + encodeURIComponent(name));
+        const j = await r.json();
+        stats = (r.ok && !j.error && !j.catalogueOnly) ? j : null;
+      }catch(e){}                    // offline, or no API here — fall back to local only
+      CH_STATS.set(name, stats); CH_PENDING.delete(name);
+      resolve(stats);
+    });
+    runQueue();
+  });
+  CH_PENDING.set(name, p);
+  return p;
 }
 
 /* ---------- filling the page ----------

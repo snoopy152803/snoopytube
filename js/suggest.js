@@ -22,6 +22,7 @@ const sgInput = () => document.getElementById("searchInput");
 
 /* ---------- searches you've made before ---------- */
 function rememberSearch(q){
+  if(state.suggest === false) return;          // nothing offered, so nothing kept
   const t = String(q || "").trim(); if(!t) return;
   state.recent = [t, ...(state.recent || []).filter(x => x.toLowerCase() !== t.toLowerCase())].slice(0, RECENT_MAX);
   save();
@@ -49,6 +50,7 @@ function localMatches(q){
 async function showSuggestions(){
   const box = sgBox(), input = sgInput(); if(!box || !input) return;
   if(sgSuppressed) return;          // dismissed on purpose; the next focus or keystroke re-arms it
+  if(state.suggest === false){ sgClose(); return; }
   const q = input.value.trim();
   const recent = (state.recent || []).filter(r => !q || r.toLowerCase().startsWith(q.toLowerCase())).slice(0, q ? 3 : 8);
 

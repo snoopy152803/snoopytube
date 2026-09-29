@@ -19,7 +19,7 @@ function renderNav(){
   ${tasteChart()}
   <div class="navsec hidemini">
     <div class="navtitle">Subscriptions</div>
-    ${state.subs.length?state.subs.map(ch=>`<a class="navitem" href="/channel/${encodeURIComponent(ch)}">${avatar(ch,"",false)}<span style="overflow:hidden;text-overflow:ellipsis">${esc(ch)}</span></a>`).join(""):`<div class="navsub">Subscribe to a channel from a video page and it'll show up here.</div>`}
+    ${state.subs.length?state.subs.map(ch=>`<a class="navitem subitem" href="/channel/${encodeURIComponent(ch)}">${avatar(ch,"",false)}<span class="subtext"><span class="subname">${esc(ch)}</span>${chSlot(ch,"subs","")}</span></a>`).join(""):`<div class="navsub">Subscribe to a channel from a video page and it'll show up here.</div>`}
   </div>
   <div class="navsec">
     <a class="navitem kidsitem${state.kids?" kidson":""}" href="#" data-kids>${ICONS.kids}<span>Kids mode</span>${state.kids?`<span class="kidsbadge">ON</span>`:""}</a>
@@ -34,6 +34,8 @@ function renderNav(){
     <a class="navitem" href="/reset" id="resetBtn">${ICONS.reset}<span>Reset SnoopyTube</span></a>
     <div class="navsub">SnoopyTube plays real YouTube videos through YouTube's own player. Your history never leaves this browser.</div>
   </div>`;
+  // Subscriber counts for the list above — queued, cached, and filled in when they land.
+  state.subs.forEach(loadChannelStats);
 }
 // "Snoopy's notes on you" — your top interests with the share of Woodstock's notes
 // each one accounts for. Hidden entirely in Kids mode: the chart is a readout of

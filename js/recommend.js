@@ -39,7 +39,7 @@ function scoreVideo(v,p){
   s/=Math.sqrt(v.tags.length+1);
   const cw=p.chans[v.ch]||0; s+=damp(cw)*0.9;
   s+=Math.log10(v.views+1)*0.06;          // small popularity prior
-  s+=Math.random()*0.5;                    // exploration, so new things get a look in
+  s+=Math.random()*exploreLevel().wander;  // exploration, so new things get a look in
   let why=null;
   if(state.subs.includes(v.ch)) why={t:"From "+v.ch+" — subscribed",k:"sub"};
   else if(cw>=1.2) why={t:"More from "+v.ch,k:"ch"};
@@ -85,9 +85,21 @@ function topCats(n=2){
   return new Set(Object.entries(p.tags).filter(([k,w])=>k.startsWith("cat:")&&w>0)
     .sort((a,b)=>b[1]-a[1]).slice(0,n).map(([k])=>k.slice(4)));
 }
-const DISCOVERY_SLOTS=[2,6,10,14,18];         // 3rd, 7th, 11th … of each block
+/* How adventurous to be, from Settings.
+     slots   — positions in each block of 20 held for a category you don't already watch
+     wander  — random jitter added to every score, which is what lets something
+               unexpected climb the list at all
+     perCat / perChan — the variety caps in diversify()
+   The caps matter as much as the slots: with a fixed cap of 8 per category the feed is
+   already diversified before the quota runs, and the setting barely changed anything. */
+const EXPLORE={
+  safe:        { slots:[6,14],             wander:0.25, perCat:14, perChan:3 },
+  balanced:    { slots:[2,6,10,14,18],     wander:0.5,  perCat:8,  perChan:2 },
+  adventurous: { slots:[1,3,6,9,12,15,18], wander:0.9,  perCat:4,  perChan:2 },
+};
+const exploreLevel=()=>EXPLORE[state.explore]||EXPLORE.balanced;
 
-function mixDiscovery(list,block=20,slots=DISCOVERY_SLOTS){
+function mixDiscovery(list,block=20,slots=exploreLevel().slots){
   const subs=new Set(state.subs), top=topCats(2);
   if(!top.size) return list;                   // nothing watched yet — everything is new
   const out=[]; let pool=list.slice();
@@ -123,7 +135,8 @@ function recommend({exclude=[],cat="All",limit=Infinity,includeWatched=false}={}
   const p=buildProfile(); const ex=new Set(exclude); const muted=mutedTags();
   const ranked=VIDEOS.filter(v=>!ex.has(v.id) && kidsAllows(v) && notMuted(v,muted) && !(v.fromSearch&&!v.custom) && (cat==="All"||v.cat===cat) && (includeWatched||!p.watched.has(v.id)) && !state.notInterested.includes(v.id))
     .map(v=>({v,...scoreVideo(v,p)})).sort((a,b)=>b.s-a.s);
-  const varied=diversify(ranked, 20, 2, cat==="All"?8:20);
+  const lvl=exploreLevel();
+  const varied=diversify(ranked, 20, lvl.perChan, cat==="All"?lvl.perCat:20);
   return (cat==="All"?mixDiscovery(varied):varied).slice(0,limit);
 }
 

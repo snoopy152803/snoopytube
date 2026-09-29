@@ -135,7 +135,8 @@ embedded player, so YouTube's own ads still appear on videos that have them.
 | `js/urls.js` | Readable video links (Short / Medium / Long) and the router's URL helpers |
 | `js/download.js` | The Download menu items, and what to say when the server can't |
 | `vercel.json` | Sends unknown paths to index.html, so /watch/abc works without a "#" |
-| `js/settings.js` | The Settings page: light/dark, link length, muted topics |
+| `js/settings.js` | The Settings page |
+| `js/backup.js` | Save / restore everything as a JSON file |
 | `js/install.js` | Registers `sw.js` and shows the "Install app" button |
 | `js/app.js` | Hash router, click handling, dialog, startup |
 | `manifest.json`, `sw.js` | What makes it installable as a desktop app |

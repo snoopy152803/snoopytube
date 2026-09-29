@@ -34,6 +34,29 @@ function setUrlStyle(s){
   toast("Links are now " + s); render();
 }
 
+function setCompact(on){
+  state.compact = !!on; save();
+  document.body.classList.toggle("compact", !!on);
+  render();
+}
+function setPauseHistory(on){
+  state.pauseHistory = !!on; save();
+  toast(on ? "History paused — Snoopy will stop taking notes" : "History on again");
+  render();
+}
+function setSuggest(on){
+  state.suggest = !!on; save();
+  if(!on){ state.recent = []; save(); sgClose(); }     // switching it off clears what it kept
+  toast(on ? "Suggestions on" : "Suggestions off, and remembered searches cleared");
+  render();
+}
+function setExplore(level){
+  state.explore = level; save();
+  toast(level === "safe" ? "Sticking to what you know"
+      : level === "adventurous" ? "Snoopy will wander further afield"
+      : "A balanced mix");
+  render();
+}
 function setShowWhy(on){
   state.showWhy = !!on; save();
   toast(on ? "Showing why each video was picked" : "Reasons hidden");
@@ -66,6 +89,9 @@ function pageSettings(){
         ${radioRow("theme", "light", theme, "Light mode", "Same layout, paper-white background.")}
         ${radioRow("theme", "system", theme, "Match my device", "Follows your system light/dark setting.")}
       </div>
+      <div class="setgroup" data-set="compact">
+        ${checkRow("compactCards", !!state.compact, "Compact cards", "Smaller thumbnails, more of them on a row.")}
+      </div>
     </section>
 
     <section class="setsec">
@@ -80,6 +106,14 @@ function pageSettings(){
 
     <section class="setsec">
       <h2>Recommendations</h2>
+      <div class="setgroup" data-set="explore">
+        ${radioRow("explore", "safe", state.explore || "balanced", "Stick to what I like",
+          "Almost everything comes from channels and topics you already watch.")}
+        ${radioRow("explore", "balanced", state.explore || "balanced", "Balanced (recommended)",
+          "Five slots in every twenty are kept for a category you don't already watch.")}
+        ${radioRow("explore", "adventurous", state.explore || "balanced", "Surprise me",
+          "Seven slots kept for something different, and more randomness everywhere else.")}
+      </div>
       <div class="setgroup" data-set="why">
         ${checkRow("showWhy", state.showWhy !== false, "Show why a video was recommended",
           "The little line under each card — “Because you watch Openings”, “From GothamChess — subscribed”. Turning it off changes nothing about what you're shown, only whether Snoopy explains himself.")}
@@ -99,6 +133,19 @@ function pageSettings(){
     </section>
 
     <section class="setsec">
+      <h2>History &amp; search</h2>
+      <div class="setgroup" data-set="history">
+        ${checkRow("pauseHistory", !!state.pauseHistory, "Pause watch history",
+          "Videos still play, they just aren't written down — so Snoopy stops learning from them too. What's already saved stays until you clear it.")}
+      </div>
+      <div class="setgroup" data-set="suggest">
+        ${checkRow("suggestOn", state.suggest !== false, "Search suggestions",
+          `The dropdown under the search box. Switching it off also clears the ${(state.recent || []).length} search${(state.recent || []).length === 1 ? "" : "es"} it has remembered.`)}
+      </div>
+      ${(state.recent || []).length ? `<button class="btn" id="clearRecent">${ICONS.reset}Clear remembered searches</button>` : ""}
+    </section>
+
+    <section class="setsec">
       <h2>Kids mode</h2>
       <p class="setintro">Kids mode is kept on the server rather than in this browser, so it can't be switched off from the console — it needs the PIN. ${state.kids ? "It's on right now." : "It's off right now."}</p>
       <button class="pill ${state.kids ? "subbed" : "primary"}" data-kids>${ICONS.kids}${state.kids ? "Turn Kids mode off" : "Turn Kids mode on"}</button>
@@ -107,6 +154,12 @@ function pageSettings(){
     <section class="setsec">
       <h2>Your data</h2>
       <p class="setintro">Your history, likes, subscriptions and settings are saved in this browser and nowhere else. Woodstock has ${state.history.length} watch${state.history.length === 1 ? "" : "es"} and ${state.liked.length} like${state.liked.length === 1 ? "" : "s"} noted down${state.kids ? "" : `, across ${tasteShares(6).topics} topic${tasteShares(6).topics === 1 ? "" : "s"}`}.</p>
+      <p class="setintro">Because it's all kept here and nowhere else, clearing this site's data — or moving to another browser — takes it with it. A backup file is the only way round that.</p>
+      <div class="setbtns">
+        <button class="btn" id="exportData">${ICONS.download}Save a backup</button>
+        <label class="btn" for="importFile">${ICONS.plus}Restore from a backup</label>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
       <div class="setbtns">
         <button class="btn" id="clearHist">${ICONS.reset}Clear watch history</button>
         <a class="btn" href="/reset" id="resetBtn">${ICONS.reset}Reset everything</a>
